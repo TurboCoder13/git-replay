@@ -30,5 +30,4 @@ addopts = "--cov=git_replay --cov-report=term-missing"
 source = ["src/git_replay"]
 
 [tool.coverage.report]
-# TODO(#9): raise to 80 once the model lands; the skeleton has no logic to cover.
-fail_under = 0
+fail_under = 80

@@ -34,3 +34,9 @@ source = ["src/git_replay"]
 
 [tool.coverage.report]
 fail_under = 80
+
+[[tool.mypy.overrides]]
+# pytest decorators resolve as untyped in some lint environments (Docker lintro
+# image vs local venv disagree); fixtures stay typed via their signatures.
+module = "tests.*"
+disallow_untyped_decorators = false

@@ -1,0 +1,80 @@
+---
+name: Deploy - GitHub Pages
+
+'on':
+  push:
+    branches: [main]
+  schedule:
+    # Twice weekly: Monday and Thursday 06:00 UTC.
+    - cron: '0 6 * * 1,4'
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Harden runner
+        # yamllint disable-line rule:line-length
+        uses: step-security/harden-runner@bf7454d06d71f1098171f2acdf0cd4708d7b5920 # v2.20.0
+        with:
+          egress-policy: block
+          allowed-endpoints: >
+            github.com:443
+            api.github.com:443
+            codeload.github.com:443
+            objects.githubusercontent.com:443
+            raw.githubusercontent.com:443
+            release-assets.githubusercontent.com:443
+            pypi.org:443
+            files.pythonhosted.org:443
+            astral.sh:443
+
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@11f9893b081a58869d3b5fccaea48c9e9e46f990 # v8.3.2
+
+      - name: Sync dependencies
+        run: uv sync --frozen
+
+      - name: Fetch public commit logs
+        # Public repos only (hard gate in fetch.py); the workflow token is
+        # sufficient — no PAT required. GH_REPLAY_TOKEN, if ever configured,
+        # takes precedence for higher rate limits.
+        env:
+          GH_TOKEN: ${{ secrets.GH_REPLAY_TOKEN || secrets.GITHUB_TOKEN }}
+        run: uv run git-replay fetch --config config.toml --out logs/
+
+      - name: Build site and widgets
+        run: uv run git-replay build --logs logs/ --out dist/ --config config.toml
+
+      - name: Upload Pages artifact
+        # yamllint disable-line rule:line-length
+        uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
+        with:
+          path: dist/
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@cd2ce8fcbc39b97be8ca5fce6e763baed58fa128 # v5.0.0

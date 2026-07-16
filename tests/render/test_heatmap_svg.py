@@ -19,7 +19,7 @@ _LEAP_COUNTS: dict[date, int] = {
 
 
 # pytest.fixture reads as untyped under lintro's dependency-free mypy env
-@pytest.fixture  # type: ignore[untyped-decorator]
+@pytest.fixture
 def snapshot_dir() -> Path:
     """Return the directory holding rendered SVG snapshots.
 

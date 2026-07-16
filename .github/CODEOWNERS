@@ -1,0 +1,5 @@
+# CODEOWNERS - Define code ownership for pull request reviews
+#
+# Rules are evaluated top-to-bottom; LAST matching pattern wins.
+
+* @TurboCoder13

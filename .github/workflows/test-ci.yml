@@ -56,8 +56,7 @@ jobs:
       test-path: tests
       coverage: true
       coverage-format: json
-      # Threshold 0 until #9 lands logic to cover (see pyproject fail_under TODO).
-      coverage-threshold: 0
+      coverage-threshold: 80
       upload-coverage: true
       extra-args: '--override-ini=addopts=--strict-markers --strict-config'
       draft-pr-skip: true

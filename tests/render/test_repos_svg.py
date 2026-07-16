@@ -131,7 +131,7 @@ def test_special_characters_are_escaped() -> None:
 
 
 # pytest.mark.parametrize reads as untyped under lintro's dependency-free mypy env
-@pytest.mark.parametrize(  # type: ignore[untyped-decorator]
+@pytest.mark.parametrize(
     "top_n",
     [0, -1],
     ids=["zero", "negative"],

@@ -1,0 +1,30 @@
+[
+  {
+    "name": "git-replay",
+    "clone_url": "https://github.com/TurboCoder13/git-replay.git",
+    "default_branch": "main",
+    "private": false,
+    "fork": false
+  },
+  {
+    "name": "secret-lab",
+    "clone_url": "https://github.com/TurboCoder13/secret-lab.git",
+    "default_branch": "main",
+    "private": true,
+    "fork": false
+  },
+  {
+    "name": "forked-tool",
+    "clone_url": "https://github.com/TurboCoder13/forked-tool.git",
+    "default_branch": "main",
+    "private": false,
+    "fork": true
+  },
+  {
+    "name": "turbo-themes",
+    "clone_url": "https://github.com/TurboCoder13/turbo-themes.git",
+    "default_branch": "develop",
+    "private": false,
+    "fork": false
+  }
+]

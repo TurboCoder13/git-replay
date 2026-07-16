@@ -5,3 +5,6 @@ node_modules
 .venv
 .lintro
 
+# Golden snapshot fixtures are byte-for-byte assertions; never reformat them.
+tests/render/fixtures/page.html
+

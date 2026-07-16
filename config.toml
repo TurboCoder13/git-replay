@@ -1,0 +1,12 @@
+# git-replay fetch configuration.
+# Owners whose public, non-fork repositories are replayed.
+owners = ["TurboCoder13", "lgtm-hq"]
+
+# Repository names to skip during discovery.
+exclude = ["ui-framework", "spotify-curator"]
+
+# Map author display names to a canonical identity.
+[alias_map]
+"Turbo Coder" = "TurboCoder13"
+"Eitel" = "TurboCoder13"
+"Eitel Ashley Dagnin" = "TurboCoder13"

@@ -1,0 +1,30 @@
+# SPDX-License-Identifier: MIT
+# For license details, see the repository root LICENSE file.
+---
+name: PR - Title Validation
+
+'on':
+  pull_request:
+    types: [opened, edited, synchronize, reopened, ready_for_review]
+  merge_group:
+
+permissions: {}
+
+concurrency:
+  group: semantic-pr-title-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  semantic-title:
+    # yamllint disable-line rule:line-length
+    uses: lgtm-hq/lgtm-ci/.github/workflows/reusable-semantic-pr-title.yml@31c25ef2e8992960e218524780e34f44f51271b5 # v0.54.0
+    with:
+      tooling-ref: '31c25ef2e8992960e218524780e34f44f51271b5' # v0.54.0
+      # Org ruleset (checks-git-replay): semantic-title / 📝 Validate PR Title
+      job-name: '📝 Validate PR Title'
+      egress-policy: block
+      egress-preset: github-minimal
+    permissions:
+      contents: read
+      # write: post/clear marker-based failure comments (post-failure-comment default)
+      pull-requests: write

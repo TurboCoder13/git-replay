@@ -51,7 +51,7 @@ def _fixture_buckets() -> list[Bucket]:
     return buckets
 
 
-@pytest.fixture  # type: ignore[untyped-decorator]
+@pytest.fixture
 def fixtures_dir() -> Path:
     """Return the directory holding snapshot fixtures.
 
@@ -61,7 +61,7 @@ def fixtures_dir() -> Path:
     return Path(__file__).parents[1] / "fixtures"
 
 
-@pytest.fixture  # type: ignore[untyped-decorator]
+@pytest.fixture
 def replay_svg() -> str:
     """Render the widget for the fixture dataset.
 

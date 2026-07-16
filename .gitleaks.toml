@@ -1,0 +1,10 @@
+# Gitleaks configuration for git-replay.
+#
+# Extends the upstream default ruleset so secret detection stays active. Add
+# allowlist entries below only for intentional test fixtures that contain fake
+# secrets for exercising security tooling.
+
+title = "git-replay gitleaks configuration"
+
+[extend]
+useDefault = true

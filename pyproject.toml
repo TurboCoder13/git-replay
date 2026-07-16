@@ -1,0 +1,34 @@
+[project]
+name = "git-replay"
+version = "0.1.0"
+description = "Animated git-history replay widgets (SVG + HTML) for GitHub profile READMEs"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { file = "LICENSE" }
+authors = [{ name = "TurboCoder13" }]
+dependencies = []
+
+[project.urls]
+Repository = "https://github.com/TurboCoder13/git-replay"
+Issues = "https://github.com/TurboCoder13/git-replay/issues"
+
+[dependency-groups]
+dev = ["assertpy>=1.1", "pytest>=8.0", "pytest-cov>=5.0"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/git_replay"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "--cov=git_replay --cov-report=term-missing"
+
+[tool.coverage.run]
+source = ["src/git_replay"]
+
+[tool.coverage.report]
+# TODO(#9): raise to 80 once the model lands; the skeleton has no logic to cover.
+fail_under = 0

@@ -1,0 +1,63 @@
+---
+ci:
+  - changed-files:
+      - any-glob-to-any-file:
+          - '.github/workflows/**'
+          - '.github/actions/**'
+          - 'scripts/**'
+
+documentation:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'docs/**'
+          - 'README.md'
+          - '**/*.md'
+          - '!.github/**/*.md'
+
+dependencies:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'pyproject.toml'
+          - 'uv.lock'
+          - 'renovate.json'
+
+maintenance:
+  - changed-files:
+      - any-glob-to-any-file:
+          - '.github/CODEOWNERS'
+          - '.github/labeler.yml'
+
+security:
+  - changed-files:
+      - any-glob-to-any-file:
+          - '.github/workflows/*security*.yml'
+          - '.gitleaks.toml'
+          - '.osv-scanner.toml'
+
+pipeline:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'src/git_replay/fetch.py'
+          - 'src/git_replay/model.py'
+          - 'src/git_replay/aggregate.py'
+          - 'src/git_replay/config.py'
+          - 'config.toml'
+
+report:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'src/git_replay/render/**'
+
+config:
+  - changed-files:
+      - any-glob-to-any-file:
+          - '.lintro-config.yaml'
+          - '.editorconfig'
+          - '.yamllint'
+          - '.prettierrc.json'
+          - '.markdownlint-cli2.jsonc'
+
+testing:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'tests/**'

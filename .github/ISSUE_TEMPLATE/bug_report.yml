@@ -1,0 +1,35 @@
+---
+name: Bug report
+description: Something in git-replay is broken
+labels: [bug, needs-triage]
+body:
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: What went wrong, and what did you expect instead?
+      placeholder: Example - heatmap SVG renders empty for repos with a single commit
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. uv run git-replay fetch --config config.toml --out logs/
+        2. uv run git-replay build --logs logs/ --out dist/
+        3. Open dist/heatmap.svg
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant output
+      description: Error messages or malformed output.
+      render: shell
+  - type: input
+    id: version
+    attributes:
+      label: git-replay version / commit
+    validations:
+      required: false

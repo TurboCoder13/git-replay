@@ -40,7 +40,7 @@ def test_render_uses_fixed_caption_verbatim() -> None:
     assert_that(svg).does_not_contain("human-authored")
 
 
-@pytest.mark.parametrize(  # type: ignore[untyped-decorator] # pytest stubs absent under --ignore-missing-imports
+@pytest.mark.parametrize(
     ("agent_pct", "expected"),
     [
         (0, "0% agent-authored"),
@@ -57,7 +57,7 @@ def test_render_formats_percentage(agent_pct: int, expected: str) -> None:
     assert_that(svg).contains(expected.split(" ", 1)[1])
 
 
-@pytest.mark.parametrize(  # type: ignore[untyped-decorator] # pytest stubs absent under --ignore-missing-imports
+@pytest.mark.parametrize(
     ("total", "expected"),
     [
         (0, "0"),

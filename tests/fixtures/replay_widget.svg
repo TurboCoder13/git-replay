@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 180" width="760" height="180" role="img" aria-label="Commit activity over 7 days; bar height is lines changed on a square-root scale; pink bars are mostly additions, cyan bars are mostly deletions">
+<style>
+.rb{opacity:.12;animation:rb-reveal 30s linear infinite}
+.playhead{animation:rb-sweep 30s linear infinite}
+@keyframes rb-reveal{0%{opacity:.12}3%{opacity:1}100%{opacity:1}}
+@keyframes rb-sweep{from{transform:translateX(0)}to{transform:translateX(760px)}}
+@media (prefers-reduced-motion:reduce){.rb{opacity:1;animation:none}.playhead{animation:none;opacity:0}}
+</style>
+<rect x="0" y="0" width="760" height="180" fill="#0d1017"/>
+<line x1="0" y1="150.0" x2="760" y2="150.0" stroke="#232936" stroke-width="1"/>
+<rect class="rb" x="0.00" y="18.19" width="94.10" height="131.81" fill="rgb(166,150,203)" style="animation-delay:0.000s"><title>2 commits, +123 -72</title></rect>
+<rect class="rb" x="190.00" y="65.58" width="94.10" height="84.42" fill="rgb(139,162,210)" style="animation-delay:7.500s"><title>1 commits, +40 -40</title></rect>
+<rect class="rb" x="380.00" y="147.00" width="94.10" height="3.00" fill="rgb(60,66,80)" style="animation-delay:15.000s"><title>1 commits, +0 -0</title></rect>
+<rect class="rb" x="570.00" y="10.00" width="94.10" height="140.00" fill="rgb(225,123,187)" style="animation-delay:22.500s"><title>1 commits, +200 -20</title></rect>
+<rect class="rb" x="665.00" y="55.61" width="94.10" height="94.39" fill="rgb(55,201,232)" style="animation-delay:26.250s"><title>1 commits, +10 -90</title></rect>
+<rect class="playhead" x="0" y="10" width="1.6" height="140" fill="#f4f6fa"/>
+<text x="4" y="172" fill="#6b7385" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace">Jan 1, 2024</text>
+<text x="756" y="172" fill="#6b7385" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" text-anchor="end">Jan 8, 2024</text>
+</svg>

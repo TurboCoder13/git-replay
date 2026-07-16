@@ -1,0 +1,13 @@
+# Ignore build artifacts and tooling caches from all linting/formatting
+
+build
+dist
+node_modules
+.venv
+venv
+env
+# Claude Code project memory and config (not source code)
+.claude
+
+__pycache__
+.lintro/*

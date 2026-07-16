@@ -8,6 +8,9 @@ license = { file = "LICENSE" }
 authors = [{ name = "TurboCoder13" }]
 dependencies = []
 
+[project.scripts]
+git-replay = "git_replay.cli:main"
+
 [project.urls]
 Repository = "https://github.com/TurboCoder13/git-replay"
 Issues = "https://github.com/TurboCoder13/git-replay/issues"

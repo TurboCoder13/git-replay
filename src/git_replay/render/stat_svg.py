@@ -1,0 +1,113 @@
+"""Agent-authored stat-tile SVG renderer for git-replay.
+
+Renders a single static, dark-palette stat tile that summarizes commit
+authorship: a headline percentage of agent-authored commits alongside the raw
+agent and service-bot commit totals. The output is self-contained SVG markup
+with no animation and no external font dependencies; every figure uses a
+monospace generic stack with tabular numerals so digits stay column-aligned.
+
+The agent/bot split is produced upstream by
+:func:`git_replay.aggregate.split_authors`; this module only presents it. The
+wording ``"agent-authored"`` is deliberate and settled — the commits were
+authored by Claude Code working under human direction, and the remainder are
+service bots (renovate, github-actions, release bots).
+"""
+
+from __future__ import annotations
+
+_SURFACE = "#10131a"
+_BORDER = "#1f2430"
+_HEADLINE = "#f4f6fa"
+_ACCENT = "#f472b6"
+_MUTED = "#8b93a5"
+_LABEL = "#6b7385"
+_VALUE = "#e7ebf2"
+
+_FONT = "ui-monospace, SFMono-Regular, Menlo, monospace"
+_TABULAR = "font-variant-numeric:tabular-nums"
+
+_WIDTH = 700
+_HEIGHT = 120
+
+#: Fixed caption. Wording is a settled product decision; do not paraphrase.
+CAPTION = "authored by Claude Code under human direction · rest are service bots"
+
+
+def _fmt(value: int) -> str:
+    """Format a commit count with grouped thousands.
+
+    Args:
+        value: A non-negative commit count.
+
+    Returns:
+        The count rendered with thousands separators (for example ``1,234``).
+    """
+    return f"{value:,}"
+
+
+def _esc(text: str) -> str:
+    """Escape text for safe inclusion in SVG/XML character data.
+
+    Args:
+        text: Raw text to escape.
+
+    Returns:
+        The text with ``&``, ``<``, and ``>`` replaced by XML entities.
+    """
+    return text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+
+
+def render(
+    agent_pct: int,
+    agent_total: int,
+    bot_total: int,
+) -> str:
+    """Render the agent-authored stat tile as standalone SVG markup.
+
+    Produces a ~700x120 dark-palette tile with the headline
+    ``"{agent_pct}% agent-authored"``, the fixed :data:`CAPTION`, and the agent
+    and service-bot commit totals shown with thousands separators. The markup is
+    static and self-contained: no scripts, animation, or external fonts.
+
+    Args:
+        agent_pct: Whole-number percentage of agent-authored commits.
+        agent_total: Number of agent-authored commits.
+        bot_total: Number of service-bot commits.
+
+    Returns:
+        A complete ``<svg>`` document as a string.
+    """
+    pct = f"{agent_pct}%"
+    agent_str = _fmt(agent_total)
+    bot_str = _fmt(bot_total)
+    aria = (
+        f"{agent_pct}% of commits are agent-authored: "
+        f"{agent_str} agent commits, {bot_str} service-bot commits"
+    )
+
+    parts = [
+        f'<svg xmlns="http://www.w3.org/2000/svg" '
+        f'viewBox="0 0 {_WIDTH} {_HEIGHT}" width="{_WIDTH}" '
+        f'height="{_HEIGHT}" role="img" aria-label="{_esc(aria)}" '
+        f'font-family="{_FONT}">',
+        f"<title>{_esc(aria)}</title>",
+        f"<desc>{_esc(CAPTION)}</desc>",
+        f'<rect x="0.5" y="0.5" width="{_WIDTH - 1}" height="{_HEIGHT - 1}" '
+        f'rx="14" fill="{_SURFACE}" stroke="{_BORDER}"/>',
+        f'<text x="28" y="30" font-size="11" letter-spacing="0.18em" '
+        f'fill="{_LABEL}">COMMIT AUTHORSHIP</text>',
+        f'<text x="28" y="70" font-size="32" style="{_TABULAR}">'
+        f'<tspan fill="{_ACCENT}" font-weight="700">{pct}</tspan>'
+        f'<tspan fill="{_HEADLINE}"> agent-authored</tspan></text>',
+        f'<text x="28" y="100" font-size="12" fill="{_MUTED}">{_esc(CAPTION)}</text>',
+        f'<text x="672" y="52" text-anchor="end" font-size="22" '
+        f'fill="{_HEADLINE}" style="{_TABULAR}">{agent_str}</text>',
+        f'<text x="672" y="68" text-anchor="end" font-size="10" '
+        f'letter-spacing="0.14em" fill="{_LABEL}">AGENT COMMITS</text>',
+        f'<text x="672" y="94" text-anchor="end" font-size="22" '
+        f'fill="{_VALUE}" style="{_TABULAR}">{bot_str}</text>',
+        f'<text x="672" y="110" text-anchor="end" font-size="10" '
+        f'letter-spacing="0.14em" fill="{_LABEL}">SERVICE-BOT COMMITS</text>',
+        "</svg>",
+    ]
+    return "\n".join(parts)

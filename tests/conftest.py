@@ -8,7 +8,7 @@ import pytest
 
 
 # pytest.fixture reads as untyped under lintro's dependency-free mypy env
-@pytest.fixture  # type: ignore[untyped-decorator]
+@pytest.fixture
 def logs_dir() -> Path:
     """Return the directory holding fixture git-log files.
 
@@ -19,7 +19,7 @@ def logs_dir() -> Path:
 
 
 # pytest.fixture reads as untyped under lintro's dependency-free mypy env
-@pytest.fixture  # type: ignore[untyped-decorator]
+@pytest.fixture
 def aliases() -> dict[str, str]:
     """Return an alias map collapsing two spellings onto one identity.
 

@@ -17,7 +17,13 @@ from git_replay.aggregate import (
     split_authors,
 )
 from git_replay.config import Config, load_config
-from git_replay.fetch import discover_repos, dump_external_log, dump_log
+from git_replay.fetch import (
+    discover_repos,
+    dump_external_log,
+    dump_log,
+    external_head,
+)
+from git_replay.manifest import load_manifest, save_manifest
 from git_replay.model import Commit, parse_log
 from git_replay.render import heatmap_svg, page, repos_svg, stat_svg
 from git_replay.render.replay_svg import ReplayMeta
@@ -36,38 +42,47 @@ _LOG_GLOBS = ("*.log", "*.txt")
 _FETCH_WORKERS = 8
 
 
-def _fetch(config: Config, out_dir: Path) -> list[Path]:
-    """Discover configured repositories and dump each commit log in parallel.
+def _is_current(
+    key: str,
+    head: str,
+    prev: dict[str, str],
+    log_path: Path,
+) -> bool:
+    """Return whether a repository's cached log can be reused unchanged.
 
-    Repositories from every owner are discovered first, then owned-repo and
-    external-repo dumps are fanned out across a bounded thread pool. Failures do
-    not silently drop sibling tasks: every task is drained and the first
-    exception is re-raised once the pool has quiesced.
+    A cached log is current when a non-empty head token was discovered, that
+    token matches the previously persisted one, and the log file is still on
+    disk. An empty token always forces a re-dump.
 
     Args:
-        config: The loaded configuration.
-        out_dir: Directory into which log files are written.
+        key: The ``owner/name`` manifest key.
+        head: The freshly discovered head token.
+        prev: The previously persisted manifest.
+        log_path: Path where the repository's log file is expected.
 
     Returns:
-        The paths of the written log files, sorted for deterministic ordering.
+        ``True`` when the dump can be skipped, ``False`` when a re-dump is
+        required.
     """
-    excluded = set(config.exclude)
-    tasks: list[Callable[[], Path | None]] = [
-        partial(dump_log, repo=repo, out_dir=out_dir)
-        for owner in config.owners
-        for repo in discover_repos(owner)
-        if repo.name not in excluded
-    ]
-    tasks.extend(
-        partial(
-            dump_external_log,
-            full_name=full_name,
-            authors=config.author_logins,
-            out_dir=out_dir,
-        )
-        for full_name in config.external
-    )
+    return bool(head) and prev.get(key) == head and log_path.exists()
 
+
+def _run_tasks(tasks: list[Callable[[], Path | None]]) -> list[Path]:
+    """Run dump tasks across a bounded thread pool, draining every failure.
+
+    Failures do not silently drop sibling tasks: every task is drained and the
+    first exception is re-raised once the pool has quiesced.
+
+    Args:
+        tasks: The zero-argument dump callables to fan out.
+
+    Returns:
+        The non-``None`` paths returned by the tasks, in completion order.
+
+    Raises:
+        Exception: The first exception raised by any task, re-raised after all
+            siblings have completed.
+    """
     written: list[Path] = []
     error: Exception | None = None
     with concurrent.futures.ThreadPoolExecutor(
@@ -84,6 +99,68 @@ def _fetch(config: Config, out_dir: Path) -> list[Path]:
                 written.append(result)
     if error is not None:
         raise error
+    return written
+
+
+def _fetch(config: Config, out_dir: Path) -> list[Path]:
+    """Discover configured repositories and incrementally dump commit logs.
+
+    A ``manifest.json`` under ``out_dir`` maps each ``owner/name`` to the head
+    token seen when its log was last dumped. Repositories whose token is
+    unchanged and whose log file still exists are skipped; the rest are fanned
+    out across a bounded thread pool. The manifest is rewritten every run so a
+    subsequent run can skip what this one produced.
+
+    Args:
+        config: The loaded configuration.
+        out_dir: Directory into which log files and the manifest are written.
+
+    Returns:
+        The paths of every current log file, sorted for deterministic ordering.
+    """
+    excluded = set(config.exclude)
+    prev = load_manifest(out_dir)
+    manifest: dict[str, str] = {}
+    written: list[Path] = []
+    tasks: list[Callable[[], Path | None]] = []
+
+    for owner in config.owners:
+        for repo in discover_repos(owner):
+            if repo.name in excluded:
+                continue
+            log_path = out_dir / f"{repo.owner}__{repo.name}.log"
+            manifest[repo.full_name] = repo.head
+            if _is_current(
+                key=repo.full_name,
+                head=repo.head,
+                prev=prev,
+                log_path=log_path,
+            ):
+                written.append(log_path)
+            else:
+                tasks.append(partial(dump_log, repo=repo, out_dir=out_dir))
+
+    for full_name in config.external:
+        head = external_head(full_name)
+        if head is None:
+            continue
+        owner, _, name = full_name.partition("/")
+        log_path = out_dir / f"{owner}__{owner}-{name}.log"
+        manifest[full_name] = head
+        if _is_current(key=full_name, head=head, prev=prev, log_path=log_path):
+            written.append(log_path)
+        else:
+            tasks.append(
+                partial(
+                    dump_external_log,
+                    full_name=full_name,
+                    authors=config.author_logins,
+                    out_dir=out_dir,
+                ),
+            )
+
+    written.extend(_run_tasks(tasks=tasks))
+    save_manifest(out_dir, manifest)
     return sorted(written)
 
 

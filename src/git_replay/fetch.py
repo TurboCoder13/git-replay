@@ -68,6 +68,7 @@ def _select(owner: str, payload: list[dict[str, object]]) -> list[Repo]:
                 name=str(item["name"]),
                 clone_url=str(item["clone_url"]),
                 default_branch=str(item.get("default_branch", "main")),
+                head=str(item.get("pushed_at", "")),
             ),
         )
     return selected
@@ -139,6 +140,28 @@ def _get_json_obj(url: str) -> dict[str, object]:
     with urllib.request.urlopen(request) as response:  # nosec B310 nosemgrep
         payload: dict[str, object] = json.loads(response.read().decode("utf-8"))
         return payload
+
+
+def external_head(full_name: str) -> str | None:
+    """Return the change token for an external repository, or ``None``.
+
+    The repository metadata is fetched once via the same endpoint that enforces
+    the privacy gate. A private or inaccessible repository yields ``None`` so
+    the caller skips it entirely; otherwise the ``pushed_at`` marker is returned
+    as an opaque head token for manifest comparison.
+
+    Args:
+        full_name: The ``owner/name`` identifier of the external repository.
+
+    Returns:
+        The repository's ``pushed_at`` token, or ``None`` when it is private or
+        inaccessible.
+    """
+    meta = _get_json_obj(url=f"{_API_ROOT}/repos/{full_name}")
+    # HARD, unconditional filter: never include private repositories.
+    if not meta or meta.get("private"):
+        return None
+    return str(meta.get("pushed_at", ""))
 
 
 def dump_external_log(

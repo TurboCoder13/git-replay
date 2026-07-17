@@ -14,12 +14,16 @@ class Repo:
         name: The repository name (without the owner prefix).
         clone_url: The HTTPS URL used to clone the repository.
         default_branch: The repository's default branch name.
+        head: Opaque change token (the repository's ``pushed_at`` marker) used
+            to detect whether the repository changed since the last fetch.
+            Empty when discovery could not determine it, which forces a re-dump.
     """
 
     owner: str
     name: str
     clone_url: str
     default_branch: str
+    head: str = ""
 
     @property
     def full_name(self) -> str:

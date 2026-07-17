@@ -42,6 +42,7 @@ from git_replay.aggregate import (
 )
 from git_replay.model import Commit
 from git_replay.render import heatmap_svg
+from git_replay.render.palette import lerp
 
 _N_BUCKETS = 240
 _DURATION_MS = 30_000
@@ -175,20 +176,6 @@ def _js_embed(obj: object) -> str:
     return json.dumps(compact).replace("</", "<\\/")
 
 
-def _lerp(start: float, end: float, ratio: float) -> float:
-    """Linearly interpolate between two values.
-
-    Args:
-        start: Value returned when ``ratio`` is 0.
-        end: Value returned when ``ratio`` is 1.
-        ratio: Interpolation position in ``[0, 1]``.
-
-    Returns:
-        The interpolated value.
-    """
-    return start + (end - start) * ratio
-
-
 def _bar_fill(ins: int, dels: int) -> str:
     """Compute a churn bar's fill from its insertion/deletion ratio.
 
@@ -207,7 +194,7 @@ def _bar_fill(ins: int, dels: int) -> str:
         return _ZERO_CHURN_FILL
     ratio = ins / total
     red, green, blue = (
-        round(_lerp(start=_CYAN[channel], end=_PINK[channel], ratio=ratio))
+        round(lerp(start=_CYAN[channel], end=_PINK[channel], ratio=ratio))
         for channel in range(3)
     )
     return f"rgb({red},{green},{blue})"

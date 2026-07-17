@@ -18,15 +18,7 @@ import math
 from collections.abc import Mapping
 from datetime import date, datetime, timedelta, tzinfo
 
-# Plasma colour stops (matplotlib "plasma" endpoints and quartiles) used as the
-# ramp for active cells and the legend gradient.
-_PLASMA: tuple[tuple[int, int, int], ...] = (
-    (13, 8, 135),
-    (126, 3, 168),
-    (204, 71, 120),
-    (248, 149, 64),
-    (240, 249, 33),
-)
+from git_replay.render.palette import plasma
 
 _EMPTY_FILL = "#151923"
 _LABEL_FILL = "#8b93a5"
@@ -50,42 +42,6 @@ _LEGEND_GAP = 4
 _LEGEND_ID = "hm-legend"
 
 
-def _lerp(
-    a: float,
-    b: float,
-    t: float,
-) -> float:
-    """Linearly interpolate between ``a`` and ``b``.
-
-    Args:
-        a: Start value.
-        b: End value.
-        t: Interpolation fraction, typically in ``[0, 1]``.
-
-    Returns:
-        The interpolated value ``a + (b - a) * t``.
-    """
-    return a + (b - a) * t
-
-
-def _plasma(t: float) -> str:
-    """Sample the plasma ramp at position ``t``.
-
-    Args:
-        t: Ramp position; clamped to ``[0, 1]``.
-
-    Returns:
-        An ``rgb(r,g,b)`` colour string.
-    """
-    t = max(0.0, min(1.0, t))
-    segment = t * (len(_PLASMA) - 1)
-    index = min(len(_PLASMA) - 2, int(segment))
-    frac = segment - index
-    lo, hi = _PLASMA[index], _PLASMA[index + 1]
-    channels = (round(_lerp(a=lo[k], b=hi[k], t=frac)) for k in range(3))
-    return "rgb({},{},{})".format(*channels)
-
-
 def _cell_fill(
     count: int,
     max_count: int,
@@ -102,7 +58,8 @@ def _cell_fill(
     """
     if count == 0:
         return _EMPTY_FILL
-    return _plasma(0.15 + 0.85 * math.sqrt(count / max_count))
+    fill: str = plasma(0.15 + 0.85 * math.sqrt(count / max_count))
+    return fill
 
 
 def _week_index(
@@ -242,7 +199,7 @@ def _defs() -> str:
         The SVG ``<defs>`` markup with the plasma legend gradient.
     """
     stops = "".join(
-        f'<stop offset="{offset}" stop-color="{_plasma(pos)}"></stop>'
+        f'<stop offset="{offset}" stop-color="{plasma(pos)}"></stop>'
         for offset, pos in (("0", 0.15), ("0.33", 0.45), ("0.66", 0.7), ("1", 1.0))
     )
     return (

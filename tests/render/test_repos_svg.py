@@ -8,6 +8,7 @@ import pytest
 from assertpy import assert_that
 
 from git_replay.render.repos_svg import _FOLD_COLOR, _PALETTE, render
+from git_replay.render.theme import DARK, LIGHT
 
 _SNAPSHOT = Path(__file__).parent / "fixtures" / "repos_svg.svg"
 
@@ -33,6 +34,21 @@ def test_render_matches_snapshot() -> None:
     assert_that(render(per_repo=_SAMPLE, data_as_of="Jul 17, 2026")).is_equal_to(
         expected,
     )
+
+
+def test_render_light_uses_light_surface_and_no_dark_surface() -> None:
+    """The light variant paints the light surface and track, not the dark ones."""
+    svg = render(per_repo=_SAMPLE, theme=LIGHT)
+    assert_that(svg).contains(f'fill="{LIGHT.surface}"')
+    assert_that(svg).contains(f'fill="{LIGHT.track}"')
+    assert_that(svg).does_not_contain(DARK.surface)
+    assert_that(svg).does_not_contain(DARK.track)
+
+
+def test_render_default_theme_is_dark() -> None:
+    """Omitting the theme keeps the original dark surface (zero drift)."""
+    svg = render(per_repo=_SAMPLE)
+    assert_that(svg).contains(f'fill="{DARK.surface}"')
 
 
 def test_render_is_wellformed_svg() -> None:

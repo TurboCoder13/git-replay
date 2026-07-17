@@ -23,6 +23,8 @@ import math
 from dataclasses import dataclass
 
 from git_replay.aggregate import Bucket
+from git_replay.render.palette import lerp
+from git_replay.render.theme import DARK, Theme
 
 _WIDTH = 760.0
 _HEIGHT = 196.0
@@ -33,13 +35,6 @@ _STAMP_Y = 190.0
 _BAR_GAP = 0.9
 _MIN_BAR_HEIGHT = 3.0
 _SWEEP_SECONDS = 30
-_CYAN = (34, 211, 238)
-_PINK = (244, 114, 182)
-_ZERO_CHURN_FILL = "rgb(60,66,80)"
-_BACKGROUND = "#0d1017"
-_BASELINE_STROKE = "#232936"
-_PLAYHEAD_FILL = "#f4f6fa"
-_LABEL_FILL = "#6b7385"
 _LABEL_FONT = "ui-monospace,SFMono-Regular,Menlo,monospace"
 
 
@@ -70,27 +65,10 @@ def _escape(text: str) -> str:
     return text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
 
 
-def _lerp(
-    start: float,
-    end: float,
-    ratio: float,
-) -> float:
-    """Linearly interpolate between two values.
-
-    Args:
-        start: Value returned when ``ratio`` is 0.
-        end: Value returned when ``ratio`` is 1.
-        ratio: Interpolation position in ``[0, 1]``.
-
-    Returns:
-        The interpolated value.
-    """
-    return start + (end - start) * ratio
-
-
 def _bar_fill(
     ins: int,
     dels: int,
+    theme: Theme,
 ) -> str:
     """Compute a bar's fill color from its insertion/deletion ratio.
 
@@ -100,16 +78,18 @@ def _bar_fill(
     Args:
         ins: Insertions in the bucket.
         dels: Deletions in the bucket.
+        theme: Colour theme supplying the cyan/pink endpoints and zero-churn fill.
 
     Returns:
         An ``rgb(...)`` CSS color string.
     """
     total = ins + dels
     if total == 0:
-        return _ZERO_CHURN_FILL
+        zero: str = theme.zero_churn
+        return zero
     ratio = ins / total
     red, green, blue = (
-        round(_lerp(start=_CYAN[channel], end=_PINK[channel], ratio=ratio))
+        round(lerp(start=theme.cyan[channel], end=theme.pink[channel], ratio=ratio))
         for channel in range(3)
     )
     return f"rgb({red},{green},{blue})"
@@ -132,11 +112,15 @@ def _bar_height(
     return max(_MIN_BAR_HEIGHT, scaled)
 
 
-def _render_bars(buckets: list[Bucket]) -> list[str]:
+def _render_bars(
+    buckets: list[Bucket],
+    theme: Theme,
+) -> list[str]:
     """Render one ``<rect>`` per non-empty bucket.
 
     Args:
         buckets: Chronologically ordered timeline buckets.
+        theme: Colour theme supplying the bar fills.
 
     Returns:
         A list of SVG ``<rect>`` element strings, one per non-empty bucket.
@@ -164,7 +148,7 @@ def _render_bars(buckets: list[Bucket]) -> list[str]:
         rects.append(
             f'<rect class="rb" x="{x:.2f}" y="{y:.2f}" '
             f'width="{slot - _BAR_GAP:.2f}" height="{height:.2f}" '
-            f'fill="{_bar_fill(ins=bucket.ins, dels=bucket.dels)}" '
+            f'fill="{_bar_fill(ins=bucket.ins, dels=bucket.dels, theme=theme)}" '
             f'style="animation-delay:{delay:.3f}s">'
             f"<title>{title}</title></rect>",
         )
@@ -195,6 +179,7 @@ def _style_block() -> str:
 def render(
     buckets: list[Bucket],
     meta: ReplayMeta,
+    theme: Theme = DARK,
 ) -> str:
     """Render the animated replay-bars widget as a standalone SVG string.
 
@@ -204,11 +189,12 @@ def render(
     Args:
         buckets: Chronologically ordered timeline buckets to draw.
         meta: Presentation labels for the timeline endpoints and span.
+        theme: Colour theme to render with; defaults to :data:`.theme.DARK`.
 
     Returns:
         A complete, self-contained SVG document with CSS-only animation.
     """
-    bars = "\n".join(_render_bars(buckets))
+    bars = "\n".join(_render_bars(buckets=buckets, theme=theme))
     aria_label = _escape(
         f"Commit activity over {meta.span_days} days; bar height is lines changed "
         f"on a square-root scale; pink bars are mostly additions, cyan bars are "
@@ -223,17 +209,17 @@ def render(
         f'aria-label="{aria_label}">\n'
         f"{_style_block()}\n"
         f'<rect x="0" y="0" width="{_WIDTH:.0f}" height="{_HEIGHT:.0f}" '
-        f'fill="{_BACKGROUND}"/>\n'
+        f'fill="{theme.replay_background}"/>\n'
         f'<line x1="0" y1="{_BASELINE:.1f}" x2="{_WIDTH:.0f}" y2="{_BASELINE:.1f}" '
-        f'stroke="{_BASELINE_STROKE}" stroke-width="1"/>\n'
+        f'stroke="{theme.baseline}" stroke-width="1"/>\n'
         f"{bars}\n"
         f'<rect class="playhead" x="0" y="{_TOP_PAD:.0f}" width="1.6" '
-        f'height="{_BASELINE - _TOP_PAD:.0f}" fill="{_PLAYHEAD_FILL}"/>\n'
-        f'<text x="4" y="{_LABEL_Y:.0f}" fill="{_LABEL_FILL}" font-size="11" '
+        f'height="{_BASELINE - _TOP_PAD:.0f}" fill="{theme.playhead}"/>\n'
+        f'<text x="4" y="{_LABEL_Y:.0f}" fill="{theme.label}" font-size="11" '
         f'font-family="{_LABEL_FONT}">{first}</text>\n'
-        f'<text x="{_WIDTH - 4:.0f}" y="{_LABEL_Y:.0f}" fill="{_LABEL_FILL}" '
+        f'<text x="{_WIDTH - 4:.0f}" y="{_LABEL_Y:.0f}" fill="{theme.label}" '
         f'font-size="11" font-family="{_LABEL_FONT}" text-anchor="end">{last}</text>\n'
-        f'<text x="{_WIDTH / 2:.0f}" y="{_STAMP_Y:.0f}" fill="{_LABEL_FILL}" '
+        f'<text x="{_WIDTH / 2:.0f}" y="{_STAMP_Y:.0f}" fill="{theme.label}" '
         f'font-size="11" font-family="{_LABEL_FONT}" text-anchor="middle">'
         f"data as of {last}</text>\n"
         f"</svg>\n"

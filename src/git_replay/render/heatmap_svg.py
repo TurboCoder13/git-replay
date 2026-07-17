@@ -19,9 +19,8 @@ from collections.abc import Mapping
 from datetime import date, datetime, timedelta, tzinfo
 
 from git_replay.render.palette import plasma
+from git_replay.render.theme import DARK, Theme
 
-_EMPTY_FILL = "#151923"
-_LABEL_FILL = "#8b93a5"
 _FONT = "ui-monospace,SFMono-Regular,Menlo,monospace"
 
 _CELL = 9
@@ -48,19 +47,22 @@ _STAMP_HEIGHT = 14
 def _cell_fill(
     count: int,
     max_count: int,
+    theme: Theme,
 ) -> str:
     """Resolve the fill colour for a day with ``count`` commits.
 
     Args:
         count: Commits on the day.
         max_count: Peak commit count across all days (``>= 1``).
+        theme: Colour theme supplying the empty-cell fill.
 
     Returns:
         The empty-cell colour when ``count`` is zero, otherwise a plasma colour
         scaled by ``0.15 + 0.85 * sqrt(count / max_count)``.
     """
     if count == 0:
-        return _EMPTY_FILL
+        empty: str = theme.heatmap_empty
+        return empty
     fill: str = plasma(0.15 + 0.85 * math.sqrt(count / max_count))
     return fill
 
@@ -128,6 +130,7 @@ def _render_year(
     counts: Mapping[date, int],
     max_count: int,
     top: int,
+    theme: Theme,
 ) -> tuple[str, int]:
     """Render a single year's grid block.
 
@@ -136,6 +139,7 @@ def _render_year(
         counts: Daily commit counts.
         max_count: Peak commit count across all days.
         top: Y offset of the block's top edge.
+        theme: Colour theme supplying label and cell fills.
 
     Returns:
         A ``(markup, max_week)`` pair where ``max_week`` is the highest column
@@ -144,7 +148,7 @@ def _render_year(
     label_y = top + 3 * _STEP + _CELL
     parts = [
         f'<text x="{_PAD_LEFT - _LABEL_GAP}" y="{label_y}" text-anchor="end" '
-        f'fill="{_LABEL_FILL}" font-family="{_FONT}" font-size="11">{year}</text>',
+        f'fill="{theme.muted}" font-family="{_FONT}" font-size="11">{year}</text>',
     ]
     jan1 = date(year, 1, 1)
     day = jan1
@@ -159,7 +163,7 @@ def _render_year(
             _cell(
                 x=x,
                 y=y,
-                fill=_cell_fill(count=count, max_count=max_count),
+                fill=_cell_fill(count=count, max_count=max_count, theme=theme),
                 title=_day_title(day=day, count=count),
             ),
         )
@@ -170,12 +174,14 @@ def _render_year(
 def _render_legend(
     max_count: int,
     top: int,
+    theme: Theme,
 ) -> str:
     """Render the ``1 -> max`` legend gradient.
 
     Args:
         max_count: Peak commit count, shown as the ramp's upper bound.
         top: Y offset of the legend's top edge.
+        theme: Colour theme supplying the label fill.
 
     Returns:
         The SVG markup for the legend row.
@@ -186,11 +192,11 @@ def _render_legend(
     unit = "commit" if max_count == 1 else "commits"
     return (
         f'<text x="{_PAD_LEFT}" y="{text_y}" text-anchor="end" '
-        f'fill="{_LABEL_FILL}" font-family="{_FONT}" font-size="11">1</text>'
+        f'fill="{theme.muted}" font-family="{_FONT}" font-size="11">1</text>'
         f'<rect x="{ramp_x}" y="{top}" width="{_LEGEND_WIDTH}" '
         f'height="{_LEGEND_HEIGHT}" rx="{_LEGEND_HEIGHT // 2}" '
         f'fill="url(#{_LEGEND_ID})"></rect>'
-        f'<text x="{max_x}" y="{text_y}" fill="{_LABEL_FILL}" '
+        f'<text x="{max_x}" y="{text_y}" fill="{theme.muted}" '
         f'font-family="{_FONT}" font-size="11">{max_count} {unit}/day</text>'
     )
 
@@ -229,6 +235,7 @@ def _tz_label(tz: tzinfo) -> str:
 def _stamp(
     data_as_of: str,
     top: int,
+    theme: Theme,
 ) -> str:
     """Render the muted ``data as of`` footer stamp.
 
@@ -236,13 +243,14 @@ def _stamp(
         data_as_of: The formatted max-commit date label (for example
             ``Jul 17, 2026``).
         top: Y offset of the legend's bottom edge, above the stamp.
+        theme: Colour theme supplying the stamp fill.
 
     Returns:
         The SVG markup for the stamp text row.
     """
     stamp_y = top + _STAMP_GAP + 10
     return (
-        f'<text x="{_PAD_LEFT}" y="{stamp_y}" fill="{_LABEL_FILL}" '
+        f'<text x="{_PAD_LEFT}" y="{stamp_y}" fill="{theme.muted}" '
         f'font-family="{_FONT}" font-size="11">data as of {data_as_of}</text>'
     )
 
@@ -251,6 +259,7 @@ def render(
     daily_counts: Mapping[date, int],
     tz: tzinfo,
     data_as_of: str | None = None,
+    theme: Theme = DARK,
 ) -> str:
     """Render the daily commit heatmap as a static SVG.
 
@@ -262,6 +271,7 @@ def render(
         data_as_of: Optional formatted max-commit date label (for example
             ``Jul 17, 2026``). When provided, a muted ``data as of`` footer stamp
             is rendered and the viewBox grows to fit it; ``None`` omits the stamp.
+        theme: Colour theme to render with; defaults to :data:`.theme.DARK`.
 
     Returns:
         A self-contained, animation-free SVG document string.
@@ -284,16 +294,17 @@ def render(
             counts=daily_counts,
             max_count=max_count,
             top=_PAD_TOP + offset * _YEAR_HEIGHT,
+            theme=theme,
         )
         blocks.append(markup)
         max_week = max(max_week, block_week)
 
     legend_top = _PAD_TOP + len(years) * _YEAR_HEIGHT + _LEGEND_GAP
-    blocks.append(_render_legend(max_count=max_count, top=legend_top))
+    blocks.append(_render_legend(max_count=max_count, top=legend_top, theme=theme))
 
     legend_bottom = legend_top + _LEGEND_HEIGHT
     if data_as_of is not None:
-        blocks.append(_stamp(data_as_of=data_as_of, top=legend_bottom))
+        blocks.append(_stamp(data_as_of=data_as_of, top=legend_bottom, theme=theme))
 
     grid_right = _PAD_LEFT + (max_week + 1) * _STEP
     legend_right = _PAD_LEFT + 12 + _LEGEND_WIDTH + 6 + 96

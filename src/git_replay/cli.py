@@ -28,6 +28,7 @@ from git_replay.model import Commit, parse_log
 from git_replay.render import heatmap_svg, page, repos_svg, stat_svg
 from git_replay.render.replay_svg import ReplayMeta
 from git_replay.render.replay_svg import render as render_replay
+from git_replay.render.theme import DARK, LIGHT, Theme
 
 # Fixed display timezone for local-day bucketing (Europe/Amsterdam, matching the
 # prototype's UTC+2 baseline). Kept as a fixed offset to stay dependency-free and
@@ -215,8 +216,16 @@ def _date_label(timestamp: int, tz: tzinfo) -> str:
     return datetime.fromtimestamp(timestamp, tz).strftime("%b %-d, %Y")
 
 
+# Widget filename stems paired with the theme suffix appended before ``.svg``.
+# The dark theme keeps the bare stem; the light theme adds ``-light``.
+_SVG_THEMES: tuple[tuple[str, Theme], ...] = (("", DARK), ("-light", LIGHT))
+
+
 def _write_svgs(commits: list[Commit], out_dir: Path) -> None:
     """Render and write the four standalone SVG widgets into ``out_dir``.
+
+    Each widget is written in both the dark palette (``{name}.svg``) and the
+    light palette (``{name}-light.svg``), so eight files are produced in total.
 
     Args:
         commits: The commits to summarize; must be non-empty.
@@ -240,34 +249,41 @@ def _write_svgs(commits: list[Commit], out_dir: Path) -> None:
     total = len(commits)
     agent_pct = round(agent_total / total * 100)
 
-    (out_dir / "replay.svg").write_text(
-        render_replay(buckets=buckets, meta=meta),
-        encoding="utf-8",
-    )
-    (out_dir / "heatmap.svg").write_text(
-        heatmap_svg.render(
-            daily_counts=daily_counts(commits=commits, tz=_DISPLAY_TZ),
-            tz=_DISPLAY_TZ,
-            data_as_of=meta.last_label,
-        ),
-        encoding="utf-8",
-    )
-    (out_dir / "repos.svg").write_text(
-        repos_svg.render(
-            per_repo=per_repo(commits=commits),
-            data_as_of=meta.last_label,
-        ),
-        encoding="utf-8",
-    )
-    (out_dir / "stat.svg").write_text(
-        stat_svg.render(
-            agent_pct=agent_pct,
-            agent_total=agent_total,
-            bot_total=bot_total,
-            data_as_of=meta.last_label,
-        ),
-        encoding="utf-8",
-    )
+    daily = daily_counts(commits=commits, tz=_DISPLAY_TZ)
+    repo_totals = per_repo(commits=commits)
+
+    for suffix, theme in _SVG_THEMES:
+        (out_dir / f"replay{suffix}.svg").write_text(
+            render_replay(buckets=buckets, meta=meta, theme=theme),
+            encoding="utf-8",
+        )
+        (out_dir / f"heatmap{suffix}.svg").write_text(
+            heatmap_svg.render(
+                daily_counts=daily,
+                tz=_DISPLAY_TZ,
+                data_as_of=meta.last_label,
+                theme=theme,
+            ),
+            encoding="utf-8",
+        )
+        (out_dir / f"repos{suffix}.svg").write_text(
+            repos_svg.render(
+                per_repo=repo_totals,
+                data_as_of=meta.last_label,
+                theme=theme,
+            ),
+            encoding="utf-8",
+        )
+        (out_dir / f"stat{suffix}.svg").write_text(
+            stat_svg.render(
+                agent_pct=agent_pct,
+                agent_total=agent_total,
+                bot_total=bot_total,
+                data_as_of=meta.last_label,
+                theme=theme,
+            ),
+            encoding="utf-8",
+        )
 
 
 def _build(logs_dir: Path, out_dir: Path, config: Config | None) -> list[Path]:
@@ -297,12 +313,14 @@ def _build(logs_dir: Path, out_dir: Path, config: Config | None) -> list[Path]:
         encoding="utf-8",
     )
     _write_svgs(commits=commits, out_dir=out_dir)
+    widgets = ("replay", "heatmap", "repos", "stat")
     return [
         index,
-        out_dir / "replay.svg",
-        out_dir / "heatmap.svg",
-        out_dir / "repos.svg",
-        out_dir / "stat.svg",
+        *(
+            out_dir / f"{name}{suffix}.svg"
+            for name in widgets
+            for suffix, _ in _SVG_THEMES
+        ),
     ]
 
 

@@ -9,6 +9,7 @@ import pytest
 from assertpy import assert_that
 
 from git_replay.render.heatmap_svg import render
+from git_replay.render.theme import DARK, LIGHT
 
 _LEAP_COUNTS: dict[date, int] = {
     date(2012, 1, 1): 3,
@@ -34,6 +35,19 @@ def test_render_matches_leap_year_snapshot(snapshot_dir: Path) -> None:
     expected = (snapshot_dir / "heatmap_leap.svg").read_text(encoding="utf-8")
     svg = render(daily_counts=_LEAP_COUNTS, tz=timezone.utc, data_as_of="Dec 31, 2012")
     assert_that(svg).is_equal_to(expected)
+
+
+def test_render_light_uses_light_empty_cell_and_no_dark_empty() -> None:
+    """The light variant fills empty cells with the light theme's empty colour."""
+    svg = render(daily_counts=_LEAP_COUNTS, tz=timezone.utc, theme=LIGHT)
+    assert_that(svg).contains(f'fill="{LIGHT.heatmap_empty}"')
+    assert_that(svg).does_not_contain(DARK.heatmap_empty)
+
+
+def test_render_default_theme_is_dark() -> None:
+    """Omitting the theme keeps the original dark empty-cell fill (zero drift)."""
+    svg = render(daily_counts=_LEAP_COUNTS, tz=timezone.utc)
+    assert_that(svg).contains(f'fill="{DARK.heatmap_empty}"')
 
 
 def test_render_stamps_the_data_as_of_date() -> None:

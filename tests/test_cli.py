@@ -444,3 +444,41 @@ def test_build_rejects_empty_logs_dir(tmp_path: Path) -> None:
         cli.main(
             ["build", "--logs", str(logs_dir), "--out", str(tmp_path / "dist")],
         )
+
+
+def test_pinned_repo_names_maps_external_slash_to_dash() -> None:
+    """Configured ``owner/name`` externals map to ``owner-name`` short names."""
+    names = cli._pinned_repo_names(external=["acme/widget", "octo/cat"])
+    assert_that(names).is_equal_to(("acme-widget", "octo-cat"))
+
+
+def test_pinned_repo_names_defaults_to_empty() -> None:
+    """No external repositories yields no pinned short names."""
+    assert_that(cli._pinned_repo_names(external=[])).is_equal_to(())
+
+
+def test_build_pins_configured_external_repo_row(tmp_path: Path) -> None:
+    """A configured external repo renders as a named row in both theme SVGs."""
+    logs_dir = tmp_path / "logs"
+    out_dir = tmp_path / "dist"
+    _write_logs(logs_dir=logs_dir)
+    # An external log lands under the ``owner-name`` short-name stem.
+    (logs_dir / "octo__octo-cat.log").write_text(_BETA_LOG, encoding="utf-8")
+    config_path = tmp_path / "config.toml"
+    config_path.write_text('external = ["octo/cat"]\n', encoding="utf-8")
+
+    cli.main(
+        [
+            "build",
+            "--logs",
+            str(logs_dir),
+            "--out",
+            str(out_dir),
+            "--config",
+            str(config_path),
+        ],
+    )
+
+    for svg_name in ("repos.svg", "repos-light.svg"):
+        svg = (out_dir / svg_name).read_text(encoding="utf-8")
+        assert_that(svg).contains(">octo-cat</text>")

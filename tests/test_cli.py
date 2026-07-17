@@ -2,12 +2,15 @@
 
 from __future__ import annotations
 
+import threading
+import time
 from pathlib import Path
 
 import pytest
 from assertpy import assert_that
 
 from git_replay import cli
+from git_replay.config import Config
 from git_replay.repo import Repo
 
 _CONFIG = """
@@ -88,6 +91,140 @@ def test_fetch_command_dumps_non_excluded_repos(
     assert_that(exit_code).is_equal_to(0)
     assert_that(dumped).is_equal_to(["git-replay"])
     assert_that(capsys.readouterr().out).contains("Wrote 1 log file(s)")
+
+
+def _owned_repo(name: str) -> Repo:
+    """Build a discovered repository fixture with the given name.
+
+    Args:
+        name: The repository name.
+
+    Returns:
+        A public repository owned by ``TurboCoder13``.
+    """
+    return Repo(
+        owner="TurboCoder13",
+        name=name,
+        clone_url=f"https://github.com/TurboCoder13/{name}.git",
+        default_branch="main",
+    )
+
+
+def test_fetch_dumps_every_repo_once_in_parallel_sorted(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    """_fetch dumps each repo exactly once, concurrently, and sorts results."""
+    names = ["gamma", "alpha", "delta", "beta"]
+    discovered = [_owned_repo(name) for name in names]
+    lock = threading.Lock()
+    dumped: list[str] = []
+    active = 0
+    peak = 0
+
+    def fake_dump(repo: Repo, out_dir: Path) -> Path:
+        nonlocal active, peak
+        with lock:
+            active += 1
+            peak = max(peak, active)
+        time.sleep(0.02)
+        with lock:
+            dumped.append(repo.name)
+            active -= 1
+        return tmp_path / f"{repo.name}.log"
+
+    monkeypatch.setattr(cli, "discover_repos", lambda owner: discovered)
+    monkeypatch.setattr(cli, "dump_log", fake_dump)
+
+    written = cli._fetch(
+        config=Config(owners=["TurboCoder13"]),
+        out_dir=tmp_path,
+    )
+
+    assert_that(sorted(dumped)).is_equal_to(sorted(names))
+    assert_that(dumped).is_length(len(names))
+    assert_that(peak).is_greater_than(1)
+    assert_that(written).is_equal_to(sorted(written))
+
+
+def test_fetch_runs_external_dumps_in_the_same_pool(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    """External-repo dumps join the owned-repo dumps and contribute results."""
+    discovered = [_owned_repo("alpha")]
+    external_calls: list[str] = []
+
+    def fake_external(full_name: str, authors: list[str], out_dir: Path) -> Path:
+        external_calls.append(full_name)
+        return tmp_path / "ext.log"
+
+    monkeypatch.setattr(cli, "discover_repos", lambda owner: discovered)
+    monkeypatch.setattr(
+        cli,
+        "dump_log",
+        lambda repo, out_dir: tmp_path / f"{repo.name}.log",
+    )
+    monkeypatch.setattr(cli, "dump_external_log", fake_external)
+
+    written = cli._fetch(
+        config=Config(
+            owners=["TurboCoder13"],
+            external=["other/repo"],
+            author_logins=["ada"],
+        ),
+        out_dir=tmp_path,
+    )
+
+    assert_that(external_calls).is_equal_to(["other/repo"])
+    assert_that(written).contains(tmp_path / "ext.log")
+    assert_that(written).contains(tmp_path / "alpha.log")
+
+
+def test_fetch_drops_external_dumps_that_return_none(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    """A ``None`` external dump is omitted from the written paths."""
+    monkeypatch.setattr(cli, "discover_repos", lambda owner: [])
+    monkeypatch.setattr(
+        cli,
+        "dump_external_log",
+        lambda full_name, authors, out_dir: None,
+    )
+
+    written = cli._fetch(
+        config=Config(external=["other/repo"], author_logins=["ada"]),
+        out_dir=tmp_path,
+    )
+
+    assert_that(written).is_empty()
+
+
+def test_fetch_reraises_after_draining_sibling_tasks(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    """One failing dump re-raises while its sibling dumps still complete."""
+    discovered = [_owned_repo(name) for name in ("alpha", "boom", "gamma")]
+    lock = threading.Lock()
+    dumped: list[str] = []
+
+    def fake_dump(repo: Repo, out_dir: Path) -> Path:
+        time.sleep(0.02)
+        if repo.name == "boom":
+            raise RuntimeError("clone failed")
+        with lock:
+            dumped.append(repo.name)
+        return tmp_path / f"{repo.name}.log"
+
+    monkeypatch.setattr(cli, "discover_repos", lambda owner: discovered)
+    monkeypatch.setattr(cli, "dump_log", fake_dump)
+
+    with pytest.raises(RuntimeError, match="clone failed"):
+        cli._fetch(config=Config(owners=["TurboCoder13"]), out_dir=tmp_path)
+
+    assert_that(sorted(dumped)).is_equal_to(["alpha", "gamma"])
 
 
 def test_fetch_requires_config_and_out() -> None:

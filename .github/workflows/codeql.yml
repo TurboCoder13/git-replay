@@ -1,0 +1,49 @@
+# SPDX-License-Identifier: MIT
+# For license details, see the repository root LICENSE file.
+---
+name: Security - CodeQL Code Scanning
+
+'on':
+  push:
+    branches: [main]
+    paths: ['**.py', 'pyproject.toml', '.github/**']
+  pull_request:
+    branches: [main]
+    # No paths filter: `codeql / 🔬 CodeQL Analysis` may be a required status
+    # check, and a path-filtered workflow that does not run leaves that
+    # context absent (not skipped), which permanently blocks PRs and
+    # merge-queue entries that touch only non-matching files. The check is
+    # produced by a reusable-workflow caller job, so step-gating cannot apply
+    # across the workflow_call boundary — always run on PRs instead.
+  merge_group:
+  schedule:
+    - cron: '0 5 * * 1'
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: codeql-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+jobs:
+  codeql:
+    # yamllint disable-line rule:line-length
+    uses: lgtm-hq/lgtm-ci/.github/workflows/reusable-codeql.yml@31c25ef2e8992960e218524780e34f44f51271b5 # v0.54.0
+    with:
+      # Org ruleset (checks-git-replay): codeql / 🔬 CodeQL Analysis
+      job-name: '🔬 CodeQL Analysis'
+      languages: python
+      build-mode: none
+      config-file: .github/codeql/codeql-config.yml
+      category: '/language:all'
+      tooling-ref: '31c25ef2e8992960e218524780e34f44f51271b5' # v0.54.0
+      egress-policy: block
+      # github-tooling preset includes release-assets.githubusercontent.com,
+      # the CodeQL bundle CDN, so no extra allowed-endpoints are required.
+      egress-preset: github-tooling
+    permissions:
+      # read: checkout repository for CodeQL analysis
+      contents: read
+      # write: upload CodeQL findings to the Security tab
+      security-events: write

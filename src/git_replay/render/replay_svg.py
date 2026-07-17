@@ -25,9 +25,11 @@ from dataclasses import dataclass
 from git_replay.aggregate import Bucket
 
 _WIDTH = 760.0
-_HEIGHT = 180.0
+_HEIGHT = 196.0
 _BASELINE = 150.0
 _TOP_PAD = 10.0
+_LABEL_Y = 172.0
+_STAMP_Y = 190.0
 _BAR_GAP = 0.9
 _MIN_BAR_HEIGHT = 3.0
 _SWEEP_SECONDS = 30
@@ -196,6 +198,9 @@ def render(
 ) -> str:
     """Render the animated replay-bars widget as a standalone SVG string.
 
+    A muted ``data as of`` footer stamp is drawn from ``meta.last_label`` — the
+    max-commit date — so the output stays deterministic (never wall-clock).
+
     Args:
         buckets: Chronologically ordered timeline buckets to draw.
         meta: Presentation labels for the timeline endpoints and span.
@@ -224,9 +229,12 @@ def render(
         f"{bars}\n"
         f'<rect class="playhead" x="0" y="{_TOP_PAD:.0f}" width="1.6" '
         f'height="{_BASELINE - _TOP_PAD:.0f}" fill="{_PLAYHEAD_FILL}"/>\n'
-        f'<text x="4" y="{_HEIGHT - 8:.0f}" fill="{_LABEL_FILL}" font-size="11" '
+        f'<text x="4" y="{_LABEL_Y:.0f}" fill="{_LABEL_FILL}" font-size="11" '
         f'font-family="{_LABEL_FONT}">{first}</text>\n'
-        f'<text x="{_WIDTH - 4:.0f}" y="{_HEIGHT - 8:.0f}" fill="{_LABEL_FILL}" '
+        f'<text x="{_WIDTH - 4:.0f}" y="{_LABEL_Y:.0f}" fill="{_LABEL_FILL}" '
         f'font-size="11" font-family="{_LABEL_FONT}" text-anchor="end">{last}</text>\n'
+        f'<text x="{_WIDTH / 2:.0f}" y="{_STAMP_Y:.0f}" fill="{_LABEL_FILL}" '
+        f'font-size="11" font-family="{_LABEL_FONT}" text-anchor="middle">'
+        f"data as of {last}</text>\n"
         f"</svg>\n"
     )

@@ -248,11 +248,15 @@ def _write_svgs(commits: list[Commit], out_dir: Path) -> None:
         heatmap_svg.render(
             daily_counts=daily_counts(commits=commits, tz=_DISPLAY_TZ),
             tz=_DISPLAY_TZ,
+            data_as_of=meta.last_label,
         ),
         encoding="utf-8",
     )
     (out_dir / "repos.svg").write_text(
-        repos_svg.render(per_repo=per_repo(commits=commits)),
+        repos_svg.render(
+            per_repo=per_repo(commits=commits),
+            data_as_of=meta.last_label,
+        ),
         encoding="utf-8",
     )
     (out_dir / "stat.svg").write_text(
@@ -260,6 +264,7 @@ def _write_svgs(commits: list[Commit], out_dir: Path) -> None:
             agent_pct=agent_pct,
             agent_total=agent_total,
             bot_total=bot_total,
+            data_as_of=meta.last_label,
         ),
         encoding="utf-8",
     )

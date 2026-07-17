@@ -131,6 +131,8 @@ h1 {{ font-family:{_MONO}; font-size:clamp(26px,4.5vw,40px); color:#f4f6fa;
 .rp-bar {{ transition:none; }}
 .au-n {{ font-family:{_MONO}; font-size:13px; font-variant-numeric:tabular-nums;
   width:5ch; text-align:right; color:#e7ebf2; }}
+.stamp {{ font-family:{_MONO}; font-size:11px; color:#6b7385;
+  text-align:center; letter-spacing:.04em; }}
 @media (prefers-reduced-motion: reduce) {{ .au-bar {{ transition:none; }} }}\
 """
 
@@ -670,6 +672,8 @@ lines changed; pink is mostly additions, cyan is mostly deletions">
   working under human direction and review. The other {_fmt(bot_commits)} commits
   ({100 - agent_pct}%) are service bots: renovate, github-actions, release bots.</div>
 </section>
+
+<footer class="stamp">data as of {last_label}</footer>
 </div>"""
 
     script = _script(

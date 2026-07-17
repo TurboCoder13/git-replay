@@ -41,6 +41,9 @@ _LEGEND_HEIGHT = 10
 _LEGEND_GAP = 4
 _LEGEND_ID = "hm-legend"
 
+_STAMP_GAP = 6
+_STAMP_HEIGHT = 14
+
 
 def _cell_fill(
     count: int,
@@ -223,9 +226,31 @@ def _tz_label(tz: tzinfo) -> str:
     return datetime(2000, 1, 1, tzinfo=tz).tzname() or str(tz)
 
 
+def _stamp(
+    data_as_of: str,
+    top: int,
+) -> str:
+    """Render the muted ``data as of`` footer stamp.
+
+    Args:
+        data_as_of: The formatted max-commit date label (for example
+            ``Jul 17, 2026``).
+        top: Y offset of the legend's bottom edge, above the stamp.
+
+    Returns:
+        The SVG markup for the stamp text row.
+    """
+    stamp_y = top + _STAMP_GAP + 10
+    return (
+        f'<text x="{_PAD_LEFT}" y="{stamp_y}" fill="{_LABEL_FILL}" '
+        f'font-family="{_FONT}" font-size="11">data as of {data_as_of}</text>'
+    )
+
+
 def render(
     daily_counts: Mapping[date, int],
     tz: tzinfo,
+    data_as_of: str | None = None,
 ) -> str:
     """Render the daily commit heatmap as a static SVG.
 
@@ -234,6 +259,9 @@ def render(
             by :func:`git_replay.aggregate.daily_counts`.
         tz: Timezone the counts were bucketed in; surfaced in the accessible
             description.
+        data_as_of: Optional formatted max-commit date label (for example
+            ``Jul 17, 2026``). When provided, a muted ``data as of`` footer stamp
+            is rendered and the viewBox grows to fit it; ``None`` omits the stamp.
 
     Returns:
         A self-contained, animation-free SVG document string.
@@ -263,10 +291,15 @@ def render(
     legend_top = _PAD_TOP + len(years) * _YEAR_HEIGHT + _LEGEND_GAP
     blocks.append(_render_legend(max_count=max_count, top=legend_top))
 
+    legend_bottom = legend_top + _LEGEND_HEIGHT
+    if data_as_of is not None:
+        blocks.append(_stamp(data_as_of=data_as_of, top=legend_bottom))
+
     grid_right = _PAD_LEFT + (max_week + 1) * _STEP
     legend_right = _PAD_LEFT + 12 + _LEGEND_WIDTH + 6 + 96
     width = max(grid_right, legend_right) + _PAD_RIGHT
-    height = legend_top + _LEGEND_HEIGHT + _LEGEND_GAP + _PAD_TOP
+    stamp_band = (_STAMP_GAP + _STAMP_HEIGHT) if data_as_of is not None else 0
+    height = legend_bottom + stamp_band + _LEGEND_GAP + _PAD_TOP
 
     return (
         f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {width} {height}" '

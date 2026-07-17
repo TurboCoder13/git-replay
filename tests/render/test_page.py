@@ -144,6 +144,23 @@ def test_render_embeds_the_heatmap_widget() -> None:
     assert_that(html).contains("Daily commit heatmap by year")
 
 
+def test_render_stamps_the_last_commit_date() -> None:
+    """The page footer carries a muted stamp of the max-commit (last) date."""
+    html = page.render(commits=_SAMPLE, tz=timezone.utc)
+    # Max commit t (1_700_620_000) resolves to Nov 22, 2023 in UTC.
+    assert_that(html).contains('<footer class="stamp">data as of Nov 22, 2023</footer>')
+
+
+def test_render_modules_do_not_use_wall_clock() -> None:
+    """No renderer derives the stamp from wall-clock time, keeping output
+    deterministic."""
+    render_dir = Path(page.__file__).parent
+    for module in sorted(render_dir.glob("*.py")):
+        source = module.read_text(encoding="utf-8")
+        assert_that(source).described_as(module.name).does_not_contain("datetime.now")
+        assert_that(source).described_as(module.name).does_not_contain("time.time")
+
+
 def test_render_rejects_empty_commits() -> None:
     """Rendering an empty history is a programming error."""
     with pytest.raises(ValueError):

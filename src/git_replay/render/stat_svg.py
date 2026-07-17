@@ -28,6 +28,7 @@ _TABULAR = "font-variant-numeric:tabular-nums"
 
 _WIDTH = 700
 _HEIGHT = 120
+_STAMP_BAND = 24
 
 #: Fixed caption. Wording is a settled product decision; do not paraphrase.
 CAPTION = "authored by Claude Code under human direction · rest are service bots"
@@ -61,6 +62,7 @@ def render(
     agent_pct: int,
     agent_total: int,
     bot_total: int,
+    data_as_of: str | None = None,
 ) -> str:
     """Render the agent-authored stat tile as standalone SVG markup.
 
@@ -73,6 +75,9 @@ def render(
         agent_pct: Whole-number percentage of agent-authored commits.
         agent_total: Number of agent-authored commits.
         bot_total: Number of service-bot commits.
+        data_as_of: Optional formatted max-commit date label (for example
+            ``Jul 17, 2026``). When provided, a muted ``data as of`` footer stamp
+            is rendered and the tile grows to fit it; ``None`` omits the stamp.
 
     Returns:
         A complete ``<svg>`` document as a string.
@@ -84,15 +89,16 @@ def render(
         f"{agent_pct}% of commits are agent-authored: "
         f"{agent_str} agent commits, {bot_str} service-bot commits"
     )
+    height = _HEIGHT + (_STAMP_BAND if data_as_of is not None else 0)
 
     parts = [
         f'<svg xmlns="http://www.w3.org/2000/svg" '
-        f'viewBox="0 0 {_WIDTH} {_HEIGHT}" width="{_WIDTH}" '
-        f'height="{_HEIGHT}" role="img" aria-label="{_esc(aria)}" '
+        f'viewBox="0 0 {_WIDTH} {height}" width="{_WIDTH}" '
+        f'height="{height}" role="img" aria-label="{_esc(aria)}" '
         f'font-family="{_FONT}">',
         f"<title>{_esc(aria)}</title>",
         f"<desc>{_esc(CAPTION)}</desc>",
-        f'<rect x="0.5" y="0.5" width="{_WIDTH - 1}" height="{_HEIGHT - 1}" '
+        f'<rect x="0.5" y="0.5" width="{_WIDTH - 1}" height="{height - 1}" '
         f'rx="14" fill="{_SURFACE}" stroke="{_BORDER}"/>',
         f'<text x="28" y="30" font-size="11" letter-spacing="0.18em" '
         f'fill="{_LABEL}">COMMIT AUTHORSHIP</text>',
@@ -108,6 +114,11 @@ def render(
         f'fill="{_VALUE}" style="{_TABULAR}">{bot_str}</text>',
         f'<text x="672" y="110" text-anchor="end" font-size="10" '
         f'letter-spacing="0.14em" fill="{_LABEL}">SERVICE-BOT COMMITS</text>',
-        "</svg>",
     ]
+    if data_as_of is not None:
+        parts.append(
+            f'<text x="28" y="{_HEIGHT + 14}" font-size="11" fill="{_LABEL}">'
+            f"data as of {_esc(data_as_of)}</text>",
+        )
+    parts.append("</svg>")
     return "\n".join(parts)

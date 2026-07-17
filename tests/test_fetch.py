@@ -65,6 +65,47 @@ def test_discover_repos_maps_fields(
     assert_that(themes.full_name).is_equal_to("TurboCoder13/turbo-themes")
 
 
+def test_discover_repos_captures_head_token(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Discovered repositories carry the pushed_at marker as their head token."""
+    repos_page = _repos_page()
+    monkeypatch.setattr(
+        fetch,
+        "_get_json",
+        lambda url: repos_page if "&page=1" in url else [],
+    )
+
+    repos = fetch.discover_repos("TurboCoder13")
+
+    themes = next(repo for repo in repos if repo.name == "turbo-themes")
+    assert_that(themes.head).is_equal_to("2026-01-10T00:00:00Z")
+
+
+def test_external_head_returns_pushed_at(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A public external repository yields its pushed_at marker as the token."""
+    monkeypatch.setattr(
+        fetch,
+        "_get_json_obj",
+        lambda url: {"private": False, "pushed_at": "2026-02-02T00:00:00Z"},
+    )
+
+    assert_that(fetch.external_head("raycast/extensions")).is_equal_to(
+        "2026-02-02T00:00:00Z",
+    )
+
+
+def test_external_head_returns_none_for_private(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A private external repository yields no token so it is skipped."""
+    monkeypatch.setattr(fetch, "_get_json_obj", lambda url: {"private": True})
+
+    assert_that(fetch.external_head("raycast/extensions")).is_none()
+
+
 def test_discover_repos_paginates(monkeypatch: pytest.MonkeyPatch) -> None:
     """A full page triggers a follow-up request until a short page ends it."""
     full_page = [

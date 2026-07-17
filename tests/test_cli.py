@@ -11,6 +11,7 @@ from assertpy import assert_that
 
 from git_replay import cli
 from git_replay.config import Config
+from git_replay.manifest import load_manifest, save_manifest
 from git_replay.repo import Repo
 
 _CONFIG = """
@@ -93,11 +94,12 @@ def test_fetch_command_dumps_non_excluded_repos(
     assert_that(capsys.readouterr().out).contains("Wrote 1 log file(s)")
 
 
-def _owned_repo(name: str) -> Repo:
+def _owned_repo(name: str, head: str = "") -> Repo:
     """Build a discovered repository fixture with the given name.
 
     Args:
         name: The repository name.
+        head: The head token; empty by default so the repo always re-dumps.
 
     Returns:
         A public repository owned by ``TurboCoder13``.
@@ -107,6 +109,7 @@ def _owned_repo(name: str) -> Repo:
         name=name,
         clone_url=f"https://github.com/TurboCoder13/{name}.git",
         default_branch="main",
+        head=head,
     )
 
 
@@ -165,6 +168,7 @@ def test_fetch_runs_external_dumps_in_the_same_pool(
         "dump_log",
         lambda repo, out_dir: tmp_path / f"{repo.name}.log",
     )
+    monkeypatch.setattr(cli, "external_head", lambda full_name: "tok")
     monkeypatch.setattr(cli, "dump_external_log", fake_external)
 
     written = cli._fetch(
@@ -187,6 +191,7 @@ def test_fetch_drops_external_dumps_that_return_none(
 ) -> None:
     """A ``None`` external dump is omitted from the written paths."""
     monkeypatch.setattr(cli, "discover_repos", lambda owner: [])
+    monkeypatch.setattr(cli, "external_head", lambda full_name: "tok")
     monkeypatch.setattr(
         cli,
         "dump_external_log",
@@ -225,6 +230,113 @@ def test_fetch_reraises_after_draining_sibling_tasks(
         cli._fetch(config=Config(owners=["TurboCoder13"]), out_dir=tmp_path)
 
     assert_that(sorted(dumped)).is_equal_to(["alpha", "gamma"])
+
+
+def test_fetch_skips_dump_when_manifest_matches_and_log_exists(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    """A repo with an unchanged token and an existing log is not re-dumped."""
+    out_dir = tmp_path / "logs"
+    out_dir.mkdir()
+    log_path = out_dir / "TurboCoder13__alpha.log"
+    log_path.write_text("@1\tAda\tinit\n1\t0\ta.py\n", encoding="utf-8")
+    save_manifest(out_dir, {"TurboCoder13/alpha": "tok-1"})
+    dumped: list[str] = []
+
+    def fake_dump(repo: Repo, out_dir: Path) -> Path:
+        dumped.append(repo.name)
+        return out_dir / f"{repo.name}.log"
+
+    monkeypatch.setattr(
+        cli,
+        "discover_repos",
+        lambda owner: [_owned_repo("alpha", head="tok-1")],
+    )
+    monkeypatch.setattr(cli, "dump_log", fake_dump)
+
+    written = cli._fetch(config=Config(owners=["TurboCoder13"]), out_dir=out_dir)
+
+    assert_that(dumped).is_empty()
+    assert_that(written).contains(log_path)
+
+
+def test_fetch_redumps_when_head_token_changed(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    """A changed head token forces a re-dump even when the log exists."""
+    out_dir = tmp_path / "logs"
+    out_dir.mkdir()
+    (out_dir / "TurboCoder13__alpha.log").write_text("stale\n", encoding="utf-8")
+    save_manifest(out_dir, {"TurboCoder13/alpha": "old"})
+    dumped: list[str] = []
+
+    def fake_dump(repo: Repo, out_dir: Path) -> Path:
+        dumped.append(repo.name)
+        return out_dir / f"{repo.owner}__{repo.name}.log"
+
+    monkeypatch.setattr(
+        cli,
+        "discover_repos",
+        lambda owner: [_owned_repo("alpha", head="new")],
+    )
+    monkeypatch.setattr(cli, "dump_log", fake_dump)
+
+    cli._fetch(config=Config(owners=["TurboCoder13"]), out_dir=out_dir)
+
+    assert_that(dumped).is_equal_to(["alpha"])
+
+
+def test_fetch_redumps_when_log_file_missing(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    """A matching token still re-dumps when the cached log is absent."""
+    out_dir = tmp_path / "logs"
+    out_dir.mkdir()
+    save_manifest(out_dir, {"TurboCoder13/alpha": "tok-1"})
+    dumped: list[str] = []
+
+    def fake_dump(repo: Repo, out_dir: Path) -> Path:
+        dumped.append(repo.name)
+        return out_dir / f"{repo.owner}__{repo.name}.log"
+
+    monkeypatch.setattr(
+        cli,
+        "discover_repos",
+        lambda owner: [_owned_repo("alpha", head="tok-1")],
+    )
+    monkeypatch.setattr(cli, "dump_log", fake_dump)
+
+    cli._fetch(config=Config(owners=["TurboCoder13"]), out_dir=out_dir)
+
+    assert_that(dumped).is_equal_to(["alpha"])
+
+
+def test_fetch_rewrites_manifest_each_run(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    """Every run persists the freshly discovered tokens to the manifest."""
+    out_dir = tmp_path / "logs"
+    out_dir.mkdir()
+    save_manifest(out_dir, {"TurboCoder13/alpha": "old"})
+
+    monkeypatch.setattr(
+        cli,
+        "discover_repos",
+        lambda owner: [_owned_repo("alpha", head="fresh")],
+    )
+    monkeypatch.setattr(
+        cli,
+        "dump_log",
+        lambda repo, out_dir: out_dir / f"{repo.owner}__{repo.name}.log",
+    )
+
+    cli._fetch(config=Config(owners=["TurboCoder13"]), out_dir=out_dir)
+
+    assert_that(load_manifest(out_dir)).is_equal_to({"TurboCoder13/alpha": "fresh"})
 
 
 def test_fetch_requires_config_and_out() -> None:

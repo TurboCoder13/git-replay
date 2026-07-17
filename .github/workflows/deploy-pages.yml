@@ -36,6 +36,8 @@ jobs:
             pypi.org:443
             files.pythonhosted.org:443
             astral.sh:443
+            *.actions.githubusercontent.com:443
+            *.blob.core.windows.net:443
 
       - name: Checkout
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
@@ -47,6 +49,19 @@ jobs:
 
       - name: Sync dependencies
         run: uv sync --frozen
+
+      - name: Cache dumped commit logs
+        # Restores the previous run's logs/ (including manifest.json) so fetch
+        # only re-dumps repositories whose head token changed. The run-id key
+        # never hits exactly, so a fresh cache is always saved via the prefix
+        # restore-keys fallback.
+        # yamllint disable-line rule:line-length
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: logs
+          key: git-replay-logs-${{ github.run_id }}
+          restore-keys: |
+            git-replay-logs-
 
       - name: Fetch public commit logs
         # Public repos only (hard gate in fetch.py); the workflow token is

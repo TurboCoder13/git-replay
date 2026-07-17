@@ -221,7 +221,33 @@ def _date_label(timestamp: int, tz: tzinfo) -> str:
 _SVG_THEMES: tuple[tuple[str, Theme], ...] = (("", DARK), ("-light", LIGHT))
 
 
-def _write_svgs(commits: list[Commit], out_dir: Path) -> None:
+def _pinned_repo_names(external: list[str]) -> tuple[str, ...]:
+    """Derive per-repo short names for configured external repositories.
+
+    External repositories are keyed as ``owner/name`` in configuration but land
+    in :func:`git_replay.aggregate.per_repo` under the ``owner-name`` short name
+    (matching the log filename stem written by
+    :func:`git_replay.fetch.dump_external_log`). This maps each configured
+    ``owner/name`` to that short name so the repos widget can pin it to a row.
+
+    Args:
+        external: Configured ``owner/name`` external repository identifiers.
+
+    Returns:
+        The ``owner-name`` short names, in configuration order.
+    """
+    names: list[str] = []
+    for full_name in external:
+        owner, _, name = full_name.partition("/")
+        names.append(f"{owner}-{name}")
+    return tuple(names)
+
+
+def _write_svgs(
+    commits: list[Commit],
+    out_dir: Path,
+    pinned: tuple[str, ...] = (),
+) -> None:
     """Render and write the four standalone SVG widgets into ``out_dir``.
 
     Each widget is written in both the dark palette (``{name}.svg``) and the
@@ -230,6 +256,8 @@ def _write_svgs(commits: list[Commit], out_dir: Path) -> None:
     Args:
         commits: The commits to summarize; must be non-empty.
         out_dir: Directory into which the SVG files are written.
+        pinned: Repository short names to pin to named rows in the repos widget,
+            passed identically to the dark and light builds.
     """
     times = [commit.t for commit in commits]
     t0, t1 = min(times), max(times)
@@ -271,6 +299,7 @@ def _write_svgs(commits: list[Commit], out_dir: Path) -> None:
                 per_repo=repo_totals,
                 data_as_of=meta.last_label,
                 theme=theme,
+                pinned=pinned,
             ),
             encoding="utf-8",
         )
@@ -302,6 +331,7 @@ def _build(logs_dir: Path, out_dir: Path, config: Config | None) -> list[Path]:
     """
     aliases = config.alias_map if config is not None else {}
     label = config.label if config is not None else "TurboCoder13"
+    external = config.external if config is not None else []
     commits = _load_commits(logs_dir=logs_dir, aliases=aliases)
     if not commits:
         raise ValueError(f"no commits found under {logs_dir}")
@@ -312,7 +342,11 @@ def _build(logs_dir: Path, out_dir: Path, config: Config | None) -> list[Path]:
         page.render(commits=commits, tz=_DISPLAY_TZ, org_label=label),
         encoding="utf-8",
     )
-    _write_svgs(commits=commits, out_dir=out_dir)
+    _write_svgs(
+        commits=commits,
+        out_dir=out_dir,
+        pinned=_pinned_repo_names(external=external),
+    )
     widgets = ("replay", "heatmap", "repos", "stat")
     return [
         index,

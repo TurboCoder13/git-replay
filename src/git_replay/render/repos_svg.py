@@ -129,6 +129,7 @@ def render(
     top_n: int = 8,
     data_as_of: str | None = None,
     theme: Theme = DARK,
+    pinned: tuple[str, ...] = (),
 ) -> str:
     """Render the compact per-repo bars widget as a standalone SVG string.
 
@@ -137,6 +138,12 @@ def render(
     repositories are summed into a single ``"everything else"`` fold row drawn in
     the neutral fold color. Bars are scaled to the largest rendered value so no
     bar overflows the track, and counts are right-aligned.
+
+    Any repository named in ``pinned`` that is present in ``per_repo`` but falls
+    outside the top ``top_n`` is promoted to its own named row placed directly
+    after the top-N rows, in descending-count order. Pinned repos are never
+    folded, so the fold row's sum excludes them, and a pinned repo that is
+    already within the top-N is not duplicated.
 
     Args:
         per_repo: Mapping of repository name to commit count, as produced by
@@ -147,6 +154,9 @@ def render(
             ``Jul 17, 2026``). When provided, a muted ``data as of`` footer stamp
             is rendered and the panel grows to fit it; ``None`` omits the stamp.
         theme: Colour theme to render with; defaults to :data:`.theme.DARK`.
+        pinned: Repository names that always render as named rows when present
+            in ``per_repo``, placed after the top-N in descending-count order and
+            excluded from the fold. Names absent from ``per_repo`` are ignored.
 
     Returns:
         A complete ``<svg>`` document string, ~700x260, static (no animation).
@@ -161,13 +171,18 @@ def render(
     head = ranked[:top_n]
     tail = ranked[top_n:]
 
+    pinned_set = set(pinned)
+    pinned_rows = [(name, count) for name, count in tail if name in pinned_set]
+    fold_tail = [(name, count) for name, count in tail if name not in pinned_set]
+
     palette = theme.categorical
+    individual = head + pinned_rows
     rows: list[tuple[str, int, str, bool]] = [
         (name, count, palette[i] if i < len(palette) else theme.fold, False)
-        for i, (name, count) in enumerate(head)
+        for i, (name, count) in enumerate(individual)
     ]
-    if tail:
-        fold_total = sum(count for _, count in tail)
+    if fold_tail:
+        fold_total = sum(count for _, count in fold_tail)
         rows.append((_FOLD_LABEL, fold_total, theme.fold, True))
 
     max_value = max((count for _, count, _, _ in rows), default=0)
@@ -191,11 +206,18 @@ def render(
     ]
 
     shown = len(head)
-    subtitle = f"top {shown}" + (f" + {len(tail)} more" if tail else "")
+    subtitle = f"top {shown}"
+    if pinned_rows:
+        subtitle += f" + {len(pinned_rows)} pinned"
+    if fold_tail:
+        subtitle += f" + {len(fold_tail)} more"
     aria = "Commits per repository"
-    if tail:
+    if pinned_rows:
+        aria += f", plus {len(pinned_rows)} pinned"
+    if fold_tail:
         aria += (
-            f", top {shown} with the remaining {len(tail)} folded into everything else"
+            f", top {shown} with the remaining {len(fold_tail)} "
+            "folded into everything else"
         )
 
     height = _HEIGHT + (_STAMP_BAND if data_as_of is not None else 0.0)

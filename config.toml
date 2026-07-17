@@ -11,3 +11,8 @@ exclude = ["ui-framework", "spotify-curator"]
 "Eitel" = "TurboCoder13"
 "Eitel Ashley Dagnin" = "TurboCoder13"
 label = "TurboCoder13"
+
+# External repositories (not owned by the owners above) whose commits authored
+# by author_logins are included via the REST API — never cloned.
+external = ["raycast/extensions"]
+author_logins = ["TurboCoder13"]

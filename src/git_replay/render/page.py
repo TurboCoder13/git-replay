@@ -537,7 +537,7 @@ onView(au,()=>{{
 def render(
     commits: list[Commit],
     tz: tzinfo,
-    org_label: str = "lgtm-hq",
+    org_label: str = "TurboCoder13",
 ) -> str:
     """Render the interactive replay page as a standalone HTML document.
 
@@ -603,7 +603,7 @@ def render(
 <header>
   <div class="eyebrow">git archaeology · {_esc(org_label)} · {n_repos} repos</div>
   <h1>{_fmt(total)} commits, replayed</h1>
-  <p class="sub">Every non-merge commit across the {_esc(org_label)} org,
+  <p class="sub">Every non-merge commit across {_esc(org_label)}'s public repos,
   {first_label} → {last_label}
   ({span_days:.0f} days). The data is baked into the page; a playhead sweeps it
   back to life.</p>

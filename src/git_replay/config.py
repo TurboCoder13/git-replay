@@ -15,11 +15,13 @@ class Config:
         owners: GitHub logins whose public repositories are discovered.
         exclude: Repository names skipped during discovery.
         alias_map: Mapping of author display names to a canonical identity.
+        label: Human-readable identity shown on the rendered page.
     """
 
     owners: list[str] = field(default_factory=list)
     exclude: list[str] = field(default_factory=list)
     alias_map: dict[str, str] = field(default_factory=dict)
+    label: str = "TurboCoder13"
 
 
 def load_config(path: str | Path) -> Config:
@@ -39,7 +41,10 @@ def load_config(path: str | Path) -> Config:
     owners = _as_str_list(value=data.get("owners", []), key="owners")
     exclude = _as_str_list(value=data.get("exclude", []), key="exclude")
     alias_map = _as_str_map(value=data.get("alias_map", {}), key="alias_map")
-    return Config(owners=owners, exclude=exclude, alias_map=alias_map)
+    label = data.get("label", "TurboCoder13")
+    if not isinstance(label, str):
+        raise TypeError("'label' must be a string")
+    return Config(owners=owners, exclude=exclude, alias_map=alias_map, label=label)
 
 
 def _as_str_list(value: object, key: str) -> list[str]:

@@ -165,6 +165,7 @@ def _build(logs_dir: Path, out_dir: Path, config: Config | None) -> list[Path]:
         ValueError: If no commits are found under ``logs_dir``.
     """
     aliases = config.alias_map if config is not None else {}
+    label = config.label if config is not None else "TurboCoder13"
     commits = _load_commits(logs_dir=logs_dir, aliases=aliases)
     if not commits:
         raise ValueError(f"no commits found under {logs_dir}")
@@ -172,7 +173,7 @@ def _build(logs_dir: Path, out_dir: Path, config: Config | None) -> list[Path]:
     out_dir.mkdir(parents=True, exist_ok=True)
     index = out_dir / "index.html"
     index.write_text(
-        page.render(commits=commits, tz=_DISPLAY_TZ),
+        page.render(commits=commits, tz=_DISPLAY_TZ, org_label=label),
         encoding="utf-8",
     )
     _write_svgs(commits=commits, out_dir=out_dir)

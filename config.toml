@@ -5,14 +5,18 @@ owners = ["TurboCoder13", "lgtm-hq"]
 # Repository names to skip during discovery.
 exclude = ["ui-framework", "spotify-curator"]
 
-# Map author display names to a canonical identity.
-[alias_map]
-"Turbo Coder" = "TurboCoder13"
-"Eitel" = "TurboCoder13"
-"Eitel Ashley Dagnin" = "TurboCoder13"
+# Human-readable identity shown on the rendered page.
 label = "TurboCoder13"
 
 # External repositories (not owned by the owners above) whose commits authored
 # by author_logins are included via the REST API — never cloned.
 external = ["raycast/extensions"]
 author_logins = ["TurboCoder13"]
+
+# Map author display names to a canonical identity.
+# NOTE: [alias_map] is a TOML table — every top-level key must stay ABOVE this
+# header or it silently becomes an alias_map entry.
+[alias_map]
+"Turbo Coder" = "TurboCoder13"
+"Eitel" = "TurboCoder13"
+"Eitel Ashley Dagnin" = "TurboCoder13"

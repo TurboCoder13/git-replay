@@ -76,3 +76,13 @@ def test_config_defaults_are_independent() -> None:
     first.owners.append("x")
 
     assert_that(Config().owners).is_empty()
+
+
+def test_repo_config_toml_parses() -> None:
+    """The committed config.toml is valid and keeps keys out of alias_map."""
+    config = load_config(path=Path(__file__).parent.parent / "config.toml")
+    assert_that(config.owners).contains("TurboCoder13")
+    assert_that(config.label).is_equal_to("TurboCoder13")
+    assert_that(config.external).contains("raycast/extensions")
+    assert_that(config.author_logins).contains("TurboCoder13")
+    assert_that(list(config.alias_map.values())).does_not_contain("raycast/extensions")

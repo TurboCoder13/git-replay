@@ -10,6 +10,7 @@ from assertpy import assert_that
 from git_replay.aggregate import Bucket, bucketize
 from git_replay.model import Commit
 from git_replay.render.replay_svg import ReplayMeta, render
+from git_replay.render.theme import DARK, LIGHT
 
 
 def _commit(
@@ -163,6 +164,24 @@ def test_render_escapes_label_metacharacters() -> None:
     assert_that(svg).contains("A &amp; B")
     assert_that(svg).contains("&lt;end&gt;")
     assert_that(svg).does_not_contain("<end>")
+
+
+def test_render_light_uses_light_background_and_no_dark_background() -> None:
+    """The light variant paints the white canvas and drops the dark background."""
+    meta = ReplayMeta(first_label="Jan 1, 2024", last_label="Jan 8, 2024", span_days=7)
+    dark = render(buckets=_fixture_buckets(), meta=meta, theme=DARK)
+    svg = render(buckets=_fixture_buckets(), meta=meta, theme=LIGHT)
+    assert_that(svg).contains(f'fill="{LIGHT.replay_background}"')
+    assert_that(svg).does_not_contain(DARK.replay_background)
+    # Re-theming the bar endpoints changes the interpolated fills.
+    assert_that(svg).is_not_equal_to(dark)
+
+
+def test_render_default_theme_is_dark() -> None:
+    """Omitting the theme keeps the original dark background (zero drift)."""
+    meta = ReplayMeta(first_label="Jan 1, 2024", last_label="Jan 8, 2024", span_days=7)
+    svg = render(buckets=_fixture_buckets(), meta=meta)
+    assert_that(svg).contains(f'fill="{DARK.replay_background}"')
 
 
 def test_render_handles_empty_buckets() -> None:

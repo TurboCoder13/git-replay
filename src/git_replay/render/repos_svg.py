@@ -12,20 +12,13 @@ GitHub profile README. Input is the ``dict[str, int]`` produced by
 
 from __future__ import annotations
 
-# Categorical palette — CVD-validated order against the #10131a surface.
-# Do NOT reorder: row i takes _PALETTE[i]; the fold row takes _FOLD_COLOR.
-_PALETTE: tuple[str, ...] = (
-    "#db2777",
-    "#0891b2",
-    "#d97706",
-    "#7c3aed",
-    "#65a30d",
-    "#2563eb",
-    "#ea580c",
-    "#059669",
-    "#dc2626",
-)
-_FOLD_COLOR = "#475569"
+from git_replay.render.theme import DARK, Theme
+
+# Categorical palette — CVD-validated order. Do NOT reorder: row i takes
+# ``theme.categorical[i]``; the fold row takes ``theme.fold``. Re-exported from
+# the dark theme for callers and tests that assert the load-bearing order.
+_PALETTE: tuple[str, ...] = DARK.categorical
+_FOLD_COLOR = DARK.fold
 _FOLD_LABEL = "everything else"
 
 # Canvas and layout geometry (SVG user units).
@@ -42,14 +35,6 @@ _BAR_MAX_H = 13.0
 _MIN_BAR_W = 2.0
 _NAME_MAX_CHARS = 20
 
-# Surface and type colors.
-_SURFACE = "#10131a"
-_BORDER = "#1f2430"
-_EYEBROW_FILL = "#6b7385"
-_TITLE_FILL = "#f4f6fa"
-_NAME_FILL = "#aeb6c6"
-_COUNT_FILL = "#e7ebf2"
-_TRACK_FILL = "#171b24"
 _MONO = "ui-monospace,SFMono-Regular,Menlo,monospace"
 
 
@@ -95,6 +80,7 @@ def _row_svg(
     bar_h: float,
     max_value: int,
     is_fold: bool,
+    theme: Theme,
 ) -> str:
     """Render one repo (or fold) row as an SVG group.
 
@@ -107,6 +93,7 @@ def _row_svg(
         bar_h: Bar height in user units.
         max_value: Largest value across rendered rows, used to scale bars.
         is_fold: Whether this is the folded "everything else" row.
+        theme: Colour theme supplying name, track, and count fills.
 
     Returns:
         An SVG ``<g>`` fragment for the row.
@@ -122,16 +109,16 @@ def _row_svg(
         f'<g class="{classes}">'
         f"<title>{tooltip}</title>"
         f'<text class="name" x="{_NAME_RIGHT:.1f}" y="{baseline:.1f}" '
-        f'text-anchor="end" fill="{_NAME_FILL}" font-size="12.5" '
+        f'text-anchor="end" fill="{theme.repo_name}" font-size="12.5" '
         f'font-family="{_MONO}">{_esc(display)}</text>'
         f'<rect class="track" x="{_BAR_X:.1f}" y="{bar_y:.1f}" '
         f'width="{_BAR_MAX_W:.1f}" height="{bar_h:.1f}" rx="4" '
-        f'fill="{_TRACK_FILL}"/>'
+        f'fill="{theme.track}"/>'
         f'<rect class="bar" data-i="{index}" x="{_BAR_X:.1f}" '
         f'y="{bar_y:.1f}" width="{bar_w:.1f}" height="{bar_h:.1f}" rx="4" '
         f'fill="{color}"/>'
         f'<text class="count" x="{_COUNT_RIGHT:.1f}" y="{baseline:.1f}" '
-        f'text-anchor="end" fill="{_COUNT_FILL}" font-size="13" '
+        f'text-anchor="end" fill="{theme.value}" font-size="13" '
         f'font-family="{_MONO}">{value}</text>'
         f"</g>"
     )
@@ -141,6 +128,7 @@ def render(
     per_repo: dict[str, int],
     top_n: int = 8,
     data_as_of: str | None = None,
+    theme: Theme = DARK,
 ) -> str:
     """Render the compact per-repo bars widget as a standalone SVG string.
 
@@ -158,6 +146,7 @@ def render(
         data_as_of: Optional formatted max-commit date label (for example
             ``Jul 17, 2026``). When provided, a muted ``data as of`` footer stamp
             is rendered and the panel grows to fit it; ``None`` omits the stamp.
+        theme: Colour theme to render with; defaults to :data:`.theme.DARK`.
 
     Returns:
         A complete ``<svg>`` document string, ~700x260, static (no animation).
@@ -172,13 +161,14 @@ def render(
     head = ranked[:top_n]
     tail = ranked[top_n:]
 
+    palette = theme.categorical
     rows: list[tuple[str, int, str, bool]] = [
-        (name, count, _PALETTE[i] if i < len(_PALETTE) else _FOLD_COLOR, False)
+        (name, count, palette[i] if i < len(palette) else theme.fold, False)
         for i, (name, count) in enumerate(head)
     ]
     if tail:
         fold_total = sum(count for _, count in tail)
-        rows.append((_FOLD_LABEL, fold_total, _FOLD_COLOR, True))
+        rows.append((_FOLD_LABEL, fold_total, theme.fold, True))
 
     max_value = max((count for _, count, _, _ in rows), default=0)
     n_rows = len(rows)
@@ -195,6 +185,7 @@ def render(
             bar_h=bar_h,
             max_value=max_value,
             is_fold=is_fold,
+            theme=theme,
         )
         for i, (label, value, color, is_fold) in enumerate(rows)
     ]
@@ -212,7 +203,7 @@ def render(
     if data_as_of is not None:
         stamp = (
             f'<text x="{_COUNT_RIGHT:.0f}" y="{_HEIGHT + 12:.0f}" text-anchor="end" '
-            f'fill="{_EYEBROW_FILL}" font-size="11" font-family="{_MONO}">'
+            f'fill="{theme.label}" font-size="11" font-family="{_MONO}">'
             f"data as of {_esc(data_as_of)}</text>"
         )
 
@@ -222,12 +213,12 @@ def render(
         f'width="{_WIDTH:.0f}" height="{height:.0f}" role="img" '
         f'aria-label="{aria}">'
         f'<rect x="0.5" y="0.5" width="{_WIDTH - 1:.1f}" '
-        f'height="{height - 1:.1f}" rx="14" fill="{_SURFACE}" '
-        f'stroke="{_BORDER}"/>'
-        f'<text x="24" y="30" fill="{_EYEBROW_FILL}" font-size="11.5" '
+        f'height="{height - 1:.1f}" rx="14" fill="{theme.surface}" '
+        f'stroke="{theme.border}"/>'
+        f'<text x="24" y="30" fill="{theme.label}" font-size="11.5" '
         f'letter-spacing="0.18em" font-family="{_MONO}">COMMITS PER REPO</text>'
         f'<text x="{_COUNT_RIGHT:.0f}" y="30" text-anchor="end" '
-        f'fill="{_TITLE_FILL}" font-size="12.5" font-family="{_MONO}">'
+        f'fill="{theme.headline}" font-size="12.5" font-family="{_MONO}">'
         f"{_esc(subtitle)}</text>"
         f"{''.join(row_svgs)}"
         f"{stamp}"

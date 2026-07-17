@@ -12,6 +12,7 @@ from assertpy import assert_that
 from git_replay import cli
 from git_replay.config import Config
 from git_replay.manifest import load_manifest, save_manifest
+from git_replay.render.theme import DARK, LIGHT
 from git_replay.repo import Repo
 
 _CONFIG = """
@@ -38,7 +39,17 @@ _BETA_LOG = """\
 2\t2\tpyproject.toml
 """
 
-_BUILD_OUTPUTS = ("index.html", "replay.svg", "heatmap.svg", "repos.svg", "stat.svg")
+_BUILD_OUTPUTS = (
+    "index.html",
+    "replay.svg",
+    "heatmap.svg",
+    "repos.svg",
+    "stat.svg",
+    "replay-light.svg",
+    "heatmap-light.svg",
+    "repos-light.svg",
+    "stat-light.svg",
+)
 
 
 def _write_logs(logs_dir: Path) -> None:
@@ -355,7 +366,7 @@ def test_build_writes_page_and_four_svgs(
     tmp_path: Path,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
-    """The build command writes index.html plus the four SVG widgets."""
+    """The build command writes index.html plus the dark and light SVG widgets."""
     logs_dir = tmp_path / "logs"
     out_dir = tmp_path / "dist"
     _write_logs(logs_dir=logs_dir)
@@ -368,14 +379,33 @@ def test_build_writes_page_and_four_svgs(
         assert_that(output.exists()).is_true()
         # Non-trivial output: every file carries real, rendered markup.
         assert_that(len(output.read_text(encoding="utf-8"))).is_greater_than(500)
-    assert_that(capsys.readouterr().out).contains("Wrote 5 file(s)")
+    assert_that(capsys.readouterr().out).contains("Wrote 9 file(s)")
 
     index = (out_dir / "index.html").read_text(encoding="utf-8")
     assert_that(index).starts_with("<!doctype html>")
     assert_that(index).contains("commits, replayed")
-    for svg_name in ("replay.svg", "heatmap.svg", "repos.svg", "stat.svg"):
+    for svg_name in _BUILD_OUTPUTS[1:]:
         svg = (out_dir / svg_name).read_text(encoding="utf-8")
         assert_that(svg).contains("<svg").contains("</svg>")
+
+
+def test_build_light_variants_use_light_surfaces(tmp_path: Path) -> None:
+    """The light SVG variants carry light surfaces and drop the dark ones."""
+    logs_dir = tmp_path / "logs"
+    out_dir = tmp_path / "dist"
+    _write_logs(logs_dir=logs_dir)
+
+    cli.main(["build", "--logs", str(logs_dir), "--out", str(out_dir)])
+
+    stat_light = (out_dir / "stat-light.svg").read_text(encoding="utf-8")
+    assert_that(stat_light).contains(LIGHT.surface)
+    assert_that(stat_light).does_not_contain(DARK.surface)
+    heatmap_light = (out_dir / "heatmap-light.svg").read_text(encoding="utf-8")
+    assert_that(heatmap_light).contains(LIGHT.heatmap_empty)
+    assert_that(heatmap_light).does_not_contain(DARK.heatmap_empty)
+    # The dark variants stay dark, untouched by the light-theme threading.
+    stat_dark = (out_dir / "stat.svg").read_text(encoding="utf-8")
+    assert_that(stat_dark).contains(DARK.surface)
 
 
 def test_build_applies_config_aliases(tmp_path: Path) -> None:

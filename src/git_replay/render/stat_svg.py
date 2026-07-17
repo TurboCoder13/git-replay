@@ -15,13 +15,7 @@ service bots (renovate, github-actions, release bots).
 
 from __future__ import annotations
 
-_SURFACE = "#10131a"
-_BORDER = "#1f2430"
-_HEADLINE = "#f4f6fa"
-_ACCENT = "#f472b6"
-_MUTED = "#8b93a5"
-_LABEL = "#6b7385"
-_VALUE = "#e7ebf2"
+from git_replay.render.theme import DARK, Theme
 
 _FONT = "ui-monospace, SFMono-Regular, Menlo, monospace"
 _TABULAR = "font-variant-numeric:tabular-nums"
@@ -63,6 +57,7 @@ def render(
     agent_total: int,
     bot_total: int,
     data_as_of: str | None = None,
+    theme: Theme = DARK,
 ) -> str:
     """Render the agent-authored stat tile as standalone SVG markup.
 
@@ -78,6 +73,7 @@ def render(
         data_as_of: Optional formatted max-commit date label (for example
             ``Jul 17, 2026``). When provided, a muted ``data as of`` footer stamp
             is rendered and the tile grows to fit it; ``None`` omits the stamp.
+        theme: Colour theme to render with; defaults to :data:`.theme.DARK`.
 
     Returns:
         A complete ``<svg>`` document as a string.
@@ -99,25 +95,26 @@ def render(
         f"<title>{_esc(aria)}</title>",
         f"<desc>{_esc(CAPTION)}</desc>",
         f'<rect x="0.5" y="0.5" width="{_WIDTH - 1}" height="{height - 1}" '
-        f'rx="14" fill="{_SURFACE}" stroke="{_BORDER}"/>',
+        f'rx="14" fill="{theme.surface}" stroke="{theme.border}"/>',
         f'<text x="28" y="30" font-size="11" letter-spacing="0.18em" '
-        f'fill="{_LABEL}">COMMIT AUTHORSHIP</text>',
+        f'fill="{theme.label}">COMMIT AUTHORSHIP</text>',
         f'<text x="28" y="70" font-size="32" style="{_TABULAR}">'
-        f'<tspan fill="{_ACCENT}" font-weight="700">{pct}</tspan>'
-        f'<tspan fill="{_HEADLINE}"> agent-authored</tspan></text>',
-        f'<text x="28" y="100" font-size="12" fill="{_MUTED}">{_esc(CAPTION)}</text>',
+        f'<tspan fill="{theme.accent}" font-weight="700">{pct}</tspan>'
+        f'<tspan fill="{theme.headline}"> agent-authored</tspan></text>',
+        f'<text x="28" y="100" font-size="12" fill="{theme.muted}">'
+        f"{_esc(CAPTION)}</text>",
         f'<text x="672" y="52" text-anchor="end" font-size="22" '
-        f'fill="{_HEADLINE}" style="{_TABULAR}">{agent_str}</text>',
+        f'fill="{theme.headline}" style="{_TABULAR}">{agent_str}</text>',
         f'<text x="672" y="68" text-anchor="end" font-size="10" '
-        f'letter-spacing="0.14em" fill="{_LABEL}">AGENT COMMITS</text>',
+        f'letter-spacing="0.14em" fill="{theme.label}">AGENT COMMITS</text>',
         f'<text x="672" y="94" text-anchor="end" font-size="22" '
-        f'fill="{_VALUE}" style="{_TABULAR}">{bot_str}</text>',
+        f'fill="{theme.value}" style="{_TABULAR}">{bot_str}</text>',
         f'<text x="672" y="110" text-anchor="end" font-size="10" '
-        f'letter-spacing="0.14em" fill="{_LABEL}">SERVICE-BOT COMMITS</text>',
+        f'letter-spacing="0.14em" fill="{theme.label}">SERVICE-BOT COMMITS</text>',
     ]
     if data_as_of is not None:
         parts.append(
-            f'<text x="28" y="{_HEIGHT + 14}" font-size="11" fill="{_LABEL}">'
+            f'<text x="28" y="{_HEIGHT + 14}" font-size="11" fill="{theme.label}">'
             f"data as of {_esc(data_as_of)}</text>",
         )
     parts.append("</svg>")

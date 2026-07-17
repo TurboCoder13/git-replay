@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 700 144" width="700" height="144" role="img" aria-label="94% of commits are agent-authored: 12,345 agent commits, 789 service-bot commits" font-family="ui-monospace, SFMono-Regular, Menlo, monospace">
+<title>94% of commits are agent-authored: 12,345 agent commits, 789 service-bot commits</title>
+<desc>authored by Claude Code under human direction · rest are service bots</desc>
+<rect x="0.5" y="0.5" width="699" height="143" rx="14" fill="#ffffff" stroke="#d0d7de"/>
+<text x="28" y="30" font-size="11" letter-spacing="0.18em" fill="#818b98">COMMIT AUTHORSHIP</text>
+<text x="28" y="70" font-size="32" style="font-variant-numeric:tabular-nums"><tspan fill="#be185d" font-weight="700">94%</tspan><tspan fill="#1f2328"> agent-authored</tspan></text>
+<text x="28" y="100" font-size="12" fill="#57606a">authored by Claude Code under human direction · rest are service bots</text>
+<text x="672" y="52" text-anchor="end" font-size="22" fill="#1f2328" style="font-variant-numeric:tabular-nums">12,345</text>
+<text x="672" y="68" text-anchor="end" font-size="10" letter-spacing="0.14em" fill="#818b98">AGENT COMMITS</text>
+<text x="672" y="94" text-anchor="end" font-size="22" fill="#1f2328" style="font-variant-numeric:tabular-nums">789</text>
+<text x="672" y="110" text-anchor="end" font-size="10" letter-spacing="0.14em" fill="#818b98">SERVICE-BOT COMMITS</text>
+<text x="28" y="134" font-size="11" fill="#818b98">data as of Jul 17, 2026</text>
+</svg>

@@ -8,8 +8,10 @@ import pytest
 from assertpy import assert_that
 
 from git_replay.render.stat_svg import CAPTION, render
+from git_replay.render.theme import DARK, LIGHT
 
 _SNAPSHOT = Path(__file__).parent / "fixtures" / "stat_tile.svg"
+_SNAPSHOT_LIGHT = Path(__file__).parent / "fixtures" / "stat_tile_light.svg"
 
 
 def test_render_matches_snapshot() -> None:
@@ -19,6 +21,33 @@ def test_render_matches_snapshot() -> None:
     )
     expected = _SNAPSHOT.read_text(encoding="utf-8").rstrip("\n")
     assert_that(svg).is_equal_to(expected)
+
+
+def test_render_matches_light_snapshot() -> None:
+    """The light-theme tile matches its committed golden SVG snapshot."""
+    svg = render(
+        agent_pct=94,
+        agent_total=12345,
+        bot_total=789,
+        data_as_of="Jul 17, 2026",
+        theme=LIGHT,
+    )
+    expected = _SNAPSHOT_LIGHT.read_text(encoding="utf-8").rstrip("\n")
+    assert_that(svg).is_equal_to(expected)
+
+
+def test_render_light_uses_light_surface_and_no_dark_surface() -> None:
+    """The light tile paints the light surface and drops the dark one."""
+    svg = render(agent_pct=94, agent_total=1, bot_total=1, theme=LIGHT)
+    assert_that(svg).contains(f'fill="{LIGHT.surface}"')
+    assert_that(svg).does_not_contain(DARK.surface)
+    assert_that(svg).contains(LIGHT.headline)
+
+
+def test_render_default_theme_is_dark() -> None:
+    """Omitting the theme keeps the original dark surface (zero drift)."""
+    svg = render(agent_pct=94, agent_total=1, bot_total=1)
+    assert_that(svg).contains(f'fill="{DARK.surface}"')
 
 
 def test_render_stamps_the_data_as_of_date() -> None:

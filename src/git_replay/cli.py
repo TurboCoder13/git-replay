@@ -14,7 +14,7 @@ from git_replay.aggregate import (
     split_authors,
 )
 from git_replay.config import Config, load_config
-from git_replay.fetch import discover_repos, dump_log
+from git_replay.fetch import discover_repos, dump_external_log, dump_log
 from git_replay.model import Commit, parse_log
 from git_replay.render import heatmap_svg, page, repos_svg, stat_svg
 from git_replay.render.replay_svg import ReplayMeta
@@ -46,6 +46,14 @@ def _fetch(config: Config, out_dir: Path) -> list[Path]:
             if repo.name in excluded:
                 continue
             written.append(dump_log(repo=repo, out_dir=out_dir))
+    for full_name in config.external:
+        external_log = dump_external_log(
+            full_name=full_name,
+            authors=config.author_logins,
+            out_dir=out_dir,
+        )
+        if external_log is not None:
+            written.append(external_log)
     return written
 
 

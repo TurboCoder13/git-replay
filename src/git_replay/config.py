@@ -16,12 +16,17 @@ class Config:
         exclude: Repository names skipped during discovery.
         alias_map: Mapping of author display names to a canonical identity.
         label: Human-readable identity shown on the rendered page.
+        external: ``owner/name`` repositories not owned by ``owners`` whose
+            commits authored by ``author_logins`` are included.
+        author_logins: GitHub logins used to filter external-repo commits.
     """
 
     owners: list[str] = field(default_factory=list)
     exclude: list[str] = field(default_factory=list)
     alias_map: dict[str, str] = field(default_factory=dict)
     label: str = "TurboCoder13"
+    external: list[str] = field(default_factory=list)
+    author_logins: list[str] = field(default_factory=list)
 
 
 def load_config(path: str | Path) -> Config:
@@ -44,7 +49,19 @@ def load_config(path: str | Path) -> Config:
     label = data.get("label", "TurboCoder13")
     if not isinstance(label, str):
         raise TypeError("'label' must be a string")
-    return Config(owners=owners, exclude=exclude, alias_map=alias_map, label=label)
+    external = _as_str_list(value=data.get("external", []), key="external")
+    author_logins = _as_str_list(
+        value=data.get("author_logins", []),
+        key="author_logins",
+    )
+    return Config(
+        owners=owners,
+        exclude=exclude,
+        alias_map=alias_map,
+        label=label,
+        external=external,
+        author_logins=author_logins,
+    )
 
 
 def _as_str_list(value: object, key: str) -> list[str]:

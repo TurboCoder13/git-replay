@@ -7,6 +7,7 @@ import os
 import subprocess  # nosec B404 - git is invoked with fixed argv lists, no shell
 import tempfile
 import urllib.request
+from datetime import datetime
 from pathlib import Path
 
 from git_replay.repo import Repo
@@ -105,6 +106,138 @@ def _get_json(url: str) -> list[dict[str, object]]:
             response.read().decode("utf-8"),
         )
         return payload
+
+
+def _get_json_obj(url: str) -> dict[str, object]:
+    """Fetch and decode a single JSON object from the GitHub REST API.
+
+    A ``GH_TOKEN`` environment variable, when set, is sent as a bearer token.
+
+    Args:
+        url: The fully qualified request URL.
+
+    Returns:
+        The decoded JSON object.
+
+    Raises:
+        ValueError: If ``url`` is not an ``https`` URL.
+    """
+    if not url.startswith("https://"):
+        raise ValueError("only https URLs are permitted")
+    headers = {
+        "Accept": "application/vnd.github+json",
+        "X-GitHub-Api-Version": "2022-11-28",
+        "User-Agent": "git-replay",
+    }
+    token = os.environ.get("GH_TOKEN")
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
+    request = urllib.request.Request(  # nosec B310 - https-only, guarded above
+        url=url,
+        headers=headers,
+    )
+    with urllib.request.urlopen(request) as response:  # nosec B310 nosemgrep
+        payload: dict[str, object] = json.loads(response.read().decode("utf-8"))
+        return payload
+
+
+def dump_external_log(
+    full_name: str,
+    authors: list[str],
+    out_dir: str | Path,
+) -> Path | None:
+    """Dump commits authored by ``authors`` in an external repository.
+
+    External repositories are never cloned (they can be arbitrarily large).
+    Instead the commit list is read from the REST API filtered by author login,
+    and per-commit stats provide synthetic ``--numstat`` totals in the same log
+    format :func:`git_replay.model.parse_log` already understands.
+
+    The same hard privacy gate applies: a private (or inaccessible) repository
+    is dropped unconditionally.
+
+    Args:
+        full_name: The ``owner/name`` identifier of the external repository.
+        authors: GitHub logins whose commits are included.
+        out_dir: Directory into which the log file is written.
+
+    Returns:
+        The path of the written log file, or ``None`` when the repository is
+        private, inaccessible, or holds no matching commits.
+    """
+    owner, _, name = full_name.partition("/")
+    meta = _get_json_obj(url=f"{_API_ROOT}/repos/{full_name}")
+    # HARD, unconditional filter: never include private repositories.
+    if not meta or meta.get("private"):
+        return None
+    lines: list[str] = []
+    seen: set[str] = set()
+    for author in authors:
+        page = 1
+        while True:
+            payload = _get_json(
+                url=(
+                    f"{_API_ROOT}/repos/{full_name}/commits"
+                    f"?author={author}&per_page={_PER_PAGE}&page={page}"
+                ),
+            )
+            if not payload:
+                break
+            for item in payload:
+                lines.extend(_external_entry(full_name=full_name, item=item, seen=seen))
+            if len(payload) < _PER_PAGE:
+                break
+            page += 1
+    if not lines:
+        return None
+    out_path = Path(out_dir)
+    out_path.mkdir(parents=True, exist_ok=True)
+    log_file = out_path / f"{owner}__{owner}-{name}.log"
+    log_file.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    return log_file
+
+
+def _external_entry(
+    full_name: str,
+    item: dict[str, object],
+    seen: set[str],
+) -> list[str]:
+    """Convert one REST commit item into log lines with synthetic numstat.
+
+    Merge commits and already-seen SHAs yield no lines.
+
+    Args:
+        full_name: The ``owner/name`` identifier of the external repository.
+        item: One decoded element of the commit-list REST payload.
+        seen: SHAs already emitted; updated in place.
+
+    Returns:
+        The log lines for the commit, or an empty list when skipped.
+    """
+    sha = str(item.get("sha", ""))
+    parents = item.get("parents")
+    if not sha or sha in seen or (isinstance(parents, list) and len(parents) > 1):
+        return []
+    seen.add(sha)
+    commit = item.get("commit")
+    if not isinstance(commit, dict):
+        return []
+    author = commit.get("author")
+    if not isinstance(author, dict):
+        return []
+    when = datetime.fromisoformat(str(author.get("date", "")).replace("Z", "+00:00"))
+    subject = str(commit.get("message", "")).split("\n", 1)[0]
+    detail = _get_json_obj(url=f"{_API_ROOT}/repos/{full_name}/commits/{sha}")
+    stats = detail.get("stats")
+    additions = deletions = 0
+    if isinstance(stats, dict):
+        additions = int(str(stats.get("additions", 0)))
+        deletions = int(str(stats.get("deletions", 0)))
+    return [
+        f"@{int(when.timestamp())}\t{author.get('name', '')}\t{subject}",
+        f"{additions}\t{deletions}\tvia-api",
+        "",
+    ]
 
 
 def dump_log(repo: Repo, out_dir: str | Path) -> Path:

@@ -3,7 +3,10 @@
 from __future__ import annotations
 
 import argparse
+import concurrent.futures
+from collections.abc import Callable
 from datetime import datetime, timedelta, timezone, tzinfo
+from functools import partial
 from pathlib import Path
 
 from git_replay.aggregate import (
@@ -28,33 +31,60 @@ _DISPLAY_TZ: tzinfo = timezone(timedelta(hours=2))
 _BUILD_BUCKETS = 240
 _LOG_GLOBS = ("*.log", "*.txt")
 
+# Repository dumps are subprocess- and network-bound, so threads parallelize the
+# fan-out cleanly. Capped to keep the clone/API load on GitHub bounded.
+_FETCH_WORKERS = 8
+
 
 def _fetch(config: Config, out_dir: Path) -> list[Path]:
-    """Discover configured repositories and dump each commit log.
+    """Discover configured repositories and dump each commit log in parallel.
+
+    Repositories from every owner are discovered first, then owned-repo and
+    external-repo dumps are fanned out across a bounded thread pool. Failures do
+    not silently drop sibling tasks: every task is drained and the first
+    exception is re-raised once the pool has quiesced.
 
     Args:
         config: The loaded configuration.
         out_dir: Directory into which log files are written.
 
     Returns:
-        The paths of the written log files.
+        The paths of the written log files, sorted for deterministic ordering.
     """
     excluded = set(config.exclude)
-    written: list[Path] = []
-    for owner in config.owners:
-        for repo in discover_repos(owner):
-            if repo.name in excluded:
-                continue
-            written.append(dump_log(repo=repo, out_dir=out_dir))
-    for full_name in config.external:
-        external_log = dump_external_log(
+    tasks: list[Callable[[], Path | None]] = [
+        partial(dump_log, repo=repo, out_dir=out_dir)
+        for owner in config.owners
+        for repo in discover_repos(owner)
+        if repo.name not in excluded
+    ]
+    tasks.extend(
+        partial(
+            dump_external_log,
             full_name=full_name,
             authors=config.author_logins,
             out_dir=out_dir,
         )
-        if external_log is not None:
-            written.append(external_log)
-    return written
+        for full_name in config.external
+    )
+
+    written: list[Path] = []
+    error: Exception | None = None
+    with concurrent.futures.ThreadPoolExecutor(
+        max_workers=_FETCH_WORKERS,
+    ) as pool:
+        futures = [pool.submit(task) for task in tasks]
+        for future in concurrent.futures.as_completed(futures):
+            try:
+                result = future.result()
+            except Exception as exc:  # noqa: BLE001 - drain siblings, re-raise below
+                error = error or exc
+                continue
+            if result is not None:
+                written.append(result)
+    if error is not None:
+        raise error
+    return sorted(written)
 
 
 def _repo_name(log_path: Path) -> str:

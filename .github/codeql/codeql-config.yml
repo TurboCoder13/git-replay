@@ -1,0 +1,7 @@
+# SPDX-License-Identifier: MIT
+# For license details, see the repository root LICENSE file.
+---
+# CodeQL configuration for git-replay (Python-only).
+# Exclude the test suite from analysis; findings there are not shipped code.
+paths-ignore:
+  - tests/**

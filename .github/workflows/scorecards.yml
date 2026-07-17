@@ -1,0 +1,33 @@
+# SPDX-License-Identifier: MIT
+# For license details, see the repository root LICENSE file.
+---
+name: Security - OpenSSF Scorecard Analysis
+
+'on':
+  schedule:
+    - cron: '0 6 * * 1'
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: scorecards-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  scorecards:
+    # yamllint disable-line rule:line-length
+    uses: lgtm-hq/lgtm-ci/.github/workflows/reusable-scorecards.yml@31c25ef2e8992960e218524780e34f44f51271b5 # v0.54.0
+    with:
+      tooling-ref: '31c25ef2e8992960e218524780e34f44f51271b5' # v0.54.0
+      # The reusable's default allowed-endpoints already covers the Scorecard,
+      # OSV, and GitHub hosts; ossf/scorecard-action's publish path forbids any
+      # preset-resolution step in the calling job, so the static default is used.
+      egress-policy: block
+    permissions:
+      # read: checkout repository for OpenSSF Scorecard analysis
+      contents: read
+      # write: upload scorecard results to the Security tab
+      security-events: write
+      # write: OIDC authentication for scorecard attestation
+      id-token: write

@@ -30,7 +30,9 @@ _SAMPLE: dict[str, int] = {
 def test_render_matches_snapshot() -> None:
     """The renderer output is byte-for-byte stable against the snapshot."""
     expected = _SNAPSHOT.read_text()
-    assert_that(render(per_repo=_SAMPLE)).is_equal_to(expected)
+    assert_that(render(per_repo=_SAMPLE, data_as_of="Jul 17, 2026")).is_equal_to(
+        expected,
+    )
 
 
 def test_render_is_wellformed_svg() -> None:
@@ -40,6 +42,20 @@ def test_render_is_wellformed_svg() -> None:
     assert_that(svg).ends_with("</svg>")
     assert_that(svg).contains('viewBox="0 0 700 260"')
     assert_that(svg).contains('role="img"')
+
+
+def test_render_stamps_the_data_as_of_date() -> None:
+    """A supplied ``data_as_of`` label renders as a muted footer stamp and grows
+    the panel to fit it."""
+    svg = render(per_repo=_SAMPLE, data_as_of="Jul 17, 2026")
+    assert_that(svg).contains("data as of Jul 17, 2026")
+    assert_that(svg).contains('viewBox="0 0 700 282"')
+
+
+def test_render_omits_stamp_without_data_as_of() -> None:
+    """No stamp is rendered when ``data_as_of`` is omitted."""
+    svg = render(per_repo=_SAMPLE)
+    assert_that(svg).does_not_contain("data as of")
 
 
 def test_fold_math_eleven_repos_yields_eight_bars_plus_fold() -> None:

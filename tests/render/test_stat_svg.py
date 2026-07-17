@@ -14,9 +14,25 @@ _SNAPSHOT = Path(__file__).parent / "fixtures" / "stat_tile.svg"
 
 def test_render_matches_snapshot() -> None:
     """The rendered tile matches the committed golden SVG snapshot."""
-    svg = render(agent_pct=94, agent_total=12345, bot_total=789)
+    svg = render(
+        agent_pct=94, agent_total=12345, bot_total=789, data_as_of="Jul 17, 2026"
+    )
     expected = _SNAPSHOT.read_text(encoding="utf-8").rstrip("\n")
     assert_that(svg).is_equal_to(expected)
+
+
+def test_render_stamps_the_data_as_of_date() -> None:
+    """A supplied ``data_as_of`` label renders as a muted footer stamp and grows
+    the tile to fit it."""
+    svg = render(agent_pct=94, agent_total=1, bot_total=1, data_as_of="Jul 17, 2026")
+    assert_that(svg).contains("data as of Jul 17, 2026")
+    assert_that(svg).contains('viewBox="0 0 700 144"')
+
+
+def test_render_omits_stamp_without_data_as_of() -> None:
+    """No stamp is rendered when ``data_as_of`` is omitted."""
+    svg = render(agent_pct=94, agent_total=1, bot_total=1)
+    assert_that(svg).does_not_contain("data as of")
 
 
 def test_render_is_self_contained_static_svg() -> None:

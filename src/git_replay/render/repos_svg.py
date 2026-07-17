@@ -31,6 +31,7 @@ _FOLD_LABEL = "everything else"
 # Canvas and layout geometry (SVG user units).
 _WIDTH = 700.0
 _HEIGHT = 260.0
+_STAMP_BAND = 22.0
 _NAME_RIGHT = 168.0
 _BAR_X = 180.0
 _BAR_MAX_W = 460.0
@@ -139,6 +140,7 @@ def _row_svg(
 def render(
     per_repo: dict[str, int],
     top_n: int = 8,
+    data_as_of: str | None = None,
 ) -> str:
     """Render the compact per-repo bars widget as a standalone SVG string.
 
@@ -153,6 +155,9 @@ def render(
             :func:`git_replay.aggregate.per_repo`.
         top_n: Number of repositories to show individually before folding the
             remainder. Must be positive.
+        data_as_of: Optional formatted max-commit date label (for example
+            ``Jul 17, 2026``). When provided, a muted ``data as of`` footer stamp
+            is rendered and the panel grows to fit it; ``None`` omits the stamp.
 
     Returns:
         A complete ``<svg>`` document string, ~700x260, static (no animation).
@@ -202,13 +207,22 @@ def render(
             f", top {shown} with the remaining {len(tail)} folded into everything else"
         )
 
+    height = _HEIGHT + (_STAMP_BAND if data_as_of is not None else 0.0)
+    stamp = ""
+    if data_as_of is not None:
+        stamp = (
+            f'<text x="{_COUNT_RIGHT:.0f}" y="{_HEIGHT + 12:.0f}" text-anchor="end" '
+            f'fill="{_EYEBROW_FILL}" font-size="11" font-family="{_MONO}">'
+            f"data as of {_esc(data_as_of)}</text>"
+        )
+
     return (
         f'<svg xmlns="http://www.w3.org/2000/svg" '
-        f'viewBox="0 0 {_WIDTH:.0f} {_HEIGHT:.0f}" '
-        f'width="{_WIDTH:.0f}" height="{_HEIGHT:.0f}" role="img" '
+        f'viewBox="0 0 {_WIDTH:.0f} {height:.0f}" '
+        f'width="{_WIDTH:.0f}" height="{height:.0f}" role="img" '
         f'aria-label="{aria}">'
         f'<rect x="0.5" y="0.5" width="{_WIDTH - 1:.1f}" '
-        f'height="{_HEIGHT - 1:.1f}" rx="14" fill="{_SURFACE}" '
+        f'height="{height - 1:.1f}" rx="14" fill="{_SURFACE}" '
         f'stroke="{_BORDER}"/>'
         f'<text x="24" y="30" fill="{_EYEBROW_FILL}" font-size="11.5" '
         f'letter-spacing="0.18em" font-family="{_MONO}">COMMITS PER REPO</text>'
@@ -216,5 +230,6 @@ def render(
         f'fill="{_TITLE_FILL}" font-size="12.5" font-family="{_MONO}">'
         f"{_esc(subtitle)}</text>"
         f"{''.join(row_svgs)}"
+        f"{stamp}"
         f"</svg>"
     )

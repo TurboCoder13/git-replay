@@ -97,8 +97,15 @@ def test_render_emits_one_bar_per_non_empty_bucket(
 def test_render_declares_viewbox(
     replay_svg: str,
 ) -> None:
-    """The SVG declares the expected 760x180 viewBox."""
-    assert_that(replay_svg).contains('viewBox="0 0 760 180"')
+    """The SVG declares the taller 760x196 viewBox that fits the stamp."""
+    assert_that(replay_svg).contains('viewBox="0 0 760 196"')
+
+
+def test_render_stamps_the_last_commit_date(
+    replay_svg: str,
+) -> None:
+    """The muted footer stamp reports the max-commit (last) date."""
+    assert_that(replay_svg).contains("data as of Jan 8, 2024")
 
 
 def test_render_embeds_style_block(

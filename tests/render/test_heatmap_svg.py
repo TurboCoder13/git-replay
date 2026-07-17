@@ -32,8 +32,20 @@ def snapshot_dir() -> Path:
 def test_render_matches_leap_year_snapshot(snapshot_dir: Path) -> None:
     """The rendered leap-year heatmap matches its stored snapshot."""
     expected = (snapshot_dir / "heatmap_leap.svg").read_text(encoding="utf-8")
-    svg = render(daily_counts=_LEAP_COUNTS, tz=timezone.utc)
+    svg = render(daily_counts=_LEAP_COUNTS, tz=timezone.utc, data_as_of="Dec 31, 2012")
     assert_that(svg).is_equal_to(expected)
+
+
+def test_render_stamps_the_data_as_of_date() -> None:
+    """A supplied ``data_as_of`` label renders as a muted footer stamp."""
+    svg = render(daily_counts=_LEAP_COUNTS, tz=timezone.utc, data_as_of="Dec 31, 2012")
+    assert_that(svg).contains("data as of Dec 31, 2012")
+
+
+def test_render_omits_stamp_without_data_as_of() -> None:
+    """No stamp is rendered when ``data_as_of`` is omitted."""
+    svg = render(daily_counts=_LEAP_COUNTS, tz=timezone.utc)
+    assert_that(svg).does_not_contain("data as of")
 
 
 def test_leap_year_renders_a_cell_per_day() -> None:

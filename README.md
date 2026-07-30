@@ -46,7 +46,7 @@ Embed the widgets in a profile README as images. Each is deployed to GitHub Page
 | Stat tile   | `https://turbocoder13.github.io/git-replay/stat.svg`    | No       |
 
 The **stat tile** reports the share of **agent-authored** commits: commits authored by
-Claude Code under human direction, with the remainder attributed to service bots
+AI coding agents under human direction, with the remainder attributed to service bots
 (renovate, github-actions, release bots).
 
 ## Architecture

@@ -9,8 +9,8 @@ monospace generic stack with tabular numerals so digits stay column-aligned.
 The agent/bot split is produced upstream by
 :func:`git_replay.aggregate.split_authors`; this module only presents it. The
 wording ``"agent-authored"`` is deliberate and settled — the commits were
-authored by Claude Code working under human direction, and the remainder are
-service bots (renovate, github-actions, release bots).
+authored by AI coding agents working under human direction, and the remainder
+are service bots (renovate, github-actions, release bots).
 """
 
 from __future__ import annotations
@@ -25,7 +25,7 @@ _HEIGHT = 120
 _STAMP_BAND = 24
 
 #: Fixed caption. Wording is a settled product decision; do not paraphrase.
-CAPTION = "authored by Claude Code under human direction · rest are service bots"
+CAPTION = "authored by AI coding agents under human direction · rest are service bots"
 
 
 def _fmt(value: int) -> str:

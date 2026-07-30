@@ -79,7 +79,7 @@ def test_render_uses_fixed_caption_verbatim() -> None:
     svg = render(agent_pct=94, agent_total=1, bot_total=1)
     assert_that(svg).contains(CAPTION)
     assert_that(CAPTION).is_equal_to(
-        "authored by Claude Code under human direction · rest are service bots",
+        "authored by AI coding agents under human direction · rest are service bots",
     )
     assert_that(svg).does_not_contain("typed by hand")
     assert_that(svg).does_not_contain("human-authored")

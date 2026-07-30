@@ -57,9 +57,10 @@ unconditionally, regardless of what configuration requests. Only public, non-for
 repositories of the configured owners are ever read.
 
 **Authorship framing is "agent-authored"** (settled wording). The stat tile reports the
-share of **agent-authored** commits: commits authored by Claude Code working under human
-direction, with the remainder attributed to service bots (renovate, github-actions,
-release bots). This phrasing is deliberate and is not to be re-litigated per widget.
+share of **agent-authored** commits: commits authored by AI coding agents working under
+human direction, with the remainder attributed to service bots (renovate,
+github-actions, release bots). This phrasing is deliberate and is not to be re-litigated
+per widget.
 
 ## Consequences
 

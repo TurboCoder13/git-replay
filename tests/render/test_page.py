@@ -124,7 +124,7 @@ def test_render_uses_settled_agent_authored_framing() -> None:
     """The author panel keeps the settled agent-authored wording."""
     html = page.render(commits=_SAMPLE, tz=timezone.utc)
     assert_that(html).contains("agent-authored")
-    assert_that(html).contains("authored by Claude Code")
+    assert_that(html).contains("authored by AI coding")
     assert_that(html).does_not_contain("human-authored")
 
 

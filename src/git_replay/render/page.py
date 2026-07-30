@@ -668,8 +668,8 @@ lines changed; pink is mostly additions, cyan is mostly deletions">
       <span class="big">{agent_pct}% agent-authored</span></div>
   </div>
   <div class="panel-body">{author_rows}</div>
-  <div class="panel-foot">The agent-authored commits were authored by Claude Code
-  working under human direction and review. The other {_fmt(bot_commits)} commits
+  <div class="panel-foot">The agent-authored commits were authored by AI coding
+  agents working under human direction and review. The other {_fmt(bot_commits)} commits
   ({100 - agent_pct}%) are service bots: renovate, github-actions, release bots.</div>
 </section>
 

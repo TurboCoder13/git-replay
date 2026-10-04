@@ -23,6 +23,26 @@ jobs:
       # OSV, and GitHub hosts; ossf/scorecard-action's publish path forbids any
       # preset-resolution step in the calling job, so the static default is used.
       egress-policy: block
+      allowed-endpoints: >
+        github.com:443
+        api.github.com:443
+        codeload.github.com:443
+        objects.githubusercontent.com:443
+        raw.githubusercontent.com:443
+        pipelines.actions.githubusercontent.com:443
+        gcr.io:443
+        api.osv.dev:443
+        api.scorecard.dev:443
+        api.securityscorecards.dev:443
+        agent.api.stepsecurity.io:443
+        fulcio.sigstore.dev:443
+        rekor.sigstore.dev:443
+        sigstore.dev:443
+        tuf-repo-cdn.sigstore.dev:443
+        release-assets.githubusercontent.com:443
+        oss-fuzz-build-logs.storage.googleapis.com:443
+        ossf.github.io:443
+        www.bestpractices.dev:443
     permissions:
       # read: checkout repository for OpenSSF Scorecard analysis
       contents: read

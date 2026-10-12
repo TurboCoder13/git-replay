@@ -32,6 +32,10 @@ jobs:
       extra-args: '--override-ini=addopts=--strict-markers --strict-config'
       draft-pr-skip: true
       job-name: '🧪 Python Compatibility'
+      # Distinct artifact prefixes (lgtm-ci v0.76 #1108): both calls run 3.13,
+      # so the shared default `python-results-3.13` would let one call's
+      # results overwrite the other's.
+      artifact-prefix: compat
       runner-image: ubuntu-24.04
       tooling-ref: '710c7ba40bf7b48b4d7c3442e3b60fb4b542db91' # v0.77.5
       egress-policy: block
@@ -61,6 +65,7 @@ jobs:
       extra-args: '--override-ini=addopts=--strict-markers --strict-config'
       draft-pr-skip: true
       job-name: Python Coverage
+      artifact-prefix: coverage
       runner-image: ubuntu-24.04
       tooling-ref: '710c7ba40bf7b48b4d7c3442e3b60fb4b542db91' # v0.77.5
       egress-policy: block

@@ -248,7 +248,7 @@ def _external_entry(
     author = commit.get("author")
     if not isinstance(author, dict):
         return []
-    when = datetime.fromisoformat(str(author.get("date", "")).replace("Z", "+00:00"))
+    when = datetime.fromisoformat(str(author.get("date", "")))
     subject = str(commit.get("message", "")).split("\n", 1)[0]
     detail = _get_json_obj(url=f"{_API_ROOT}/repos/{full_name}/commits/{sha}")
     stats = detail.get("stats")

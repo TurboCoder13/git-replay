@@ -52,4 +52,5 @@ def plasma(t: float) -> str:
     frac = segment - index
     lo, hi = PLASMA[index], PLASMA[index + 1]
     channels = (round(lerp(start=lo[k], end=hi[k], ratio=frac)) for k in range(3))
-    return "rgb({},{},{})".format(*channels)
+    red, green, blue = channels
+    return f"rgb({red},{green},{blue})"

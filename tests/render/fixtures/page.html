@@ -1,4 +1,4 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -30,6 +30,9 @@ h1 { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:clamp(26
   color:#f4f6fa; font-variant-numeric:tabular-nums; line-height:1; }
 .big.pink { color:#f472b6; }
 .stat { display:flex; flex-direction:column; gap:6px; }
+.stat-replay { align-items:flex-end; }
+.churn-ins { color:#f472b6; }
+.churn-dels { color:#22d3ee; }
 .spacer { flex:1; }
 .r-btn { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:13px; cursor:pointer; color:#d3d9e3;
   background:#171b24; border:1px solid #2a3140; border-radius:8px;
@@ -55,6 +58,16 @@ h1 { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:clamp(26
 .au-bar { display:block; height:12px; border-radius:4px; width:0;
   transition:width 1.6s cubic-bezier(.22,.8,.3,1); }
 .rp-bar { transition:none; }
+.bar-color-0 { background:#db2777; }
+.bar-color-1 { background:#0891b2; }
+.bar-color-2 { background:#d97706; }
+.bar-color-3 { background:#7c3aed; }
+.bar-color-4 { background:#65a30d; }
+.bar-color-5 { background:#2563eb; }
+.bar-color-6 { background:#ea580c; }
+.bar-color-7 { background:#059669; }
+.bar-color-8 { background:#dc2626; }
+.bar-color-9 { background:#475569; }
 .au-n { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:13px; font-variant-numeric:tabular-nums;
   width:5ch; text-align:right; color:#e7ebf2; }
 .stamp { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:11px; color:#6b7385;
@@ -80,8 +93,8 @@ h1 { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:clamp(26
     <div class="stat"><span class="k">lines written</span>
       <span class="big pink r-lines">+0</span></div>
     <div class="spacer"></div>
-    <div class="stat" style="align-items:flex-end">
-      <button class="r-btn">▶ replay 0.0 years in 30s</button>
+    <div class="stat stat-replay">
+      <button class="r-btn" type="button">▶ replay 0.0 years in 30s</button>
     </div>
   </div>
   <div class="panel-body">
@@ -107,8 +120,8 @@ h1 { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:clamp(26
     </div>
   </div>
   <div class="panel-foot">All 10 commits (merges excluded), replayed.
-  <span style="color:#f472b6">Pink</span> bars are mostly new code;
-  <span style="color:#22d3ee">cyan</span>
+  <span class="churn-ins">Pink</span> bars are mostly new code;
+  <span class="churn-dels">cyan</span>
   bars are mostly deletion; height is lines touched (√ scale). The log shows the
   biggest real commit subjects as the playhead passes them.
   Total churn: +838 / −139.</div>
@@ -119,7 +132,7 @@ h1 { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:clamp(26
     <div class="stat"><span class="k">→ commits land per repo</span>
       <span class="big">3 repos</span></div>
   </div>
-  <div class="panel-body"><div class="au-row"><span class="au-name">alpha</span><span class="au-track"><span class="au-bar rp-bar" style="background:#db2777"></span></span><span class="au-n rp-n">0</span></div><div class="au-row"><span class="au-name">beta</span><span class="au-track"><span class="au-bar rp-bar" style="background:#0891b2"></span></span><span class="au-n rp-n">0</span></div><div class="au-row"><span class="au-name">gamma</span><span class="au-track"><span class="au-bar rp-bar" style="background:#d97706"></span></span><span class="au-n rp-n">0</span></div></div>
+  <div class="panel-body"><div class="au-row"><span class="au-name">alpha</span><span class="au-track"><span class="au-bar rp-bar bar-color-0"></span></span><span class="au-n rp-n">0</span></div><div class="au-row"><span class="au-name">beta</span><span class="au-track"><span class="au-bar rp-bar bar-color-1"></span></span><span class="au-n rp-n">0</span></div><div class="au-row"><span class="au-name">gamma</span><span class="au-track"><span class="au-bar rp-bar bar-color-2"></span></span><span class="au-n rp-n">0</span></div></div>
   <div class="panel-foot">Live during the replay above — each repo's counter
   advances as its commits land on the timeline. Canonical clone per repo
   (branch worktrees deduplicated).</div>
@@ -141,7 +154,7 @@ h1 { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:clamp(26
     <div class="stat"><span class="k">→ commits land per author</span>
       <span class="big">80% agent-authored</span></div>
   </div>
-  <div class="panel-body"><div class="au-row"><span class="au-name">Ada</span><span class="au-track"><span class="au-bar" data-w="100.0" style="background:#db2777"></span></span><span class="au-n" data-counter-max="4">0</span></div><div class="au-row"><span class="au-name">Kai</span><span class="au-track"><span class="au-bar" data-w="50.0" style="background:#0891b2"></span></span><span class="au-n" data-counter-max="2">0</span></div><div class="au-row"><span class="au-name">Lin</span><span class="au-track"><span class="au-bar" data-w="50.0" style="background:#d97706"></span></span><span class="au-n" data-counter-max="2">0</span></div><div class="au-row"><span class="au-name">renovate[bot]</span><span class="au-track"><span class="au-bar" data-w="50.0" style="background:#7c3aed"></span></span><span class="au-n" data-counter-max="2">0</span></div></div>
+  <div class="panel-body"><div class="au-row"><span class="au-name">Ada</span><span class="au-track"><span class="au-bar bar-color-0" data-w="100.0"></span></span><span class="au-n" data-counter-max="4">0</span></div><div class="au-row"><span class="au-name">Kai</span><span class="au-track"><span class="au-bar bar-color-1" data-w="50.0"></span></span><span class="au-n" data-counter-max="2">0</span></div><div class="au-row"><span class="au-name">Lin</span><span class="au-track"><span class="au-bar bar-color-2" data-w="50.0"></span></span><span class="au-n" data-counter-max="2">0</span></div><div class="au-row"><span class="au-name">renovate[bot]</span><span class="au-track"><span class="au-bar bar-color-3" data-w="50.0"></span></span><span class="au-n" data-counter-max="2">0</span></div></div>
   <div class="panel-foot">The agent-authored commits were authored by AI coding
   agents working under human direction and review. The other 2 commits
   (20%) are service bots: renovate, github-actions, release bots.</div>

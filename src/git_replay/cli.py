@@ -259,23 +259,19 @@ def _write_svgs(
         pinned: Repository short names to pin to named rows in the repos widget,
             passed identically to the dark and light builds.
     """
-    times = [commit.t for commit in commits]
-    t0, t1 = min(times), max(times)
-    span_days = round((t1 - t0) / 86_400)
+    t0 = min(commit.t for commit in commits)
+    t1 = max(commit.t for commit in commits)
 
     buckets = bucketize(commits=commits, n_buckets=_BUILD_BUCKETS)
     meta = ReplayMeta(
         first_label=_date_label(timestamp=t0, tz=_DISPLAY_TZ),
         last_label=_date_label(timestamp=t1, tz=_DISPLAY_TZ),
-        span_days=span_days,
+        span_days=round((t1 - t0) / 86_400),
     )
 
-    totals = per_author(commits=commits)
-    agent, bots = split_authors(totals=totals)
+    agent, bots = split_authors(totals=per_author(commits=commits))
     agent_total = sum(agent.values())
     bot_total = sum(bots.values())
-    total = len(commits)
-    agent_pct = round(agent_total / total * 100)
 
     daily = daily_counts(commits=commits, tz=_DISPLAY_TZ)
     repo_totals = per_repo(commits=commits)
@@ -305,7 +301,7 @@ def _write_svgs(
         )
         (out_dir / f"stat{suffix}.svg").write_text(
             stat_svg.render(
-                agent_pct=agent_pct,
+                agent_pct=round(agent_total / len(commits) * 100),
                 agent_total=agent_total,
                 bot_total=bot_total,
                 data_as_of=meta.last_label,

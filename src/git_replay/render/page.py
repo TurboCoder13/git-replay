@@ -76,6 +76,10 @@ _CATEGORICAL: tuple[str, ...] = (
     "#dc2626",
 )
 _TAIL = "#475569"
+_BAR_STYLE = "\n".join(
+    f".bar-color-{index} {{ background:{color}; }}"
+    for index, color in enumerate((*_CATEGORICAL, _TAIL))
+)
 
 _MONO = "ui-monospace,SFMono-Regular,Menlo,monospace"
 _STYLE = f"""\
@@ -104,6 +108,9 @@ h1 {{ font-family:{_MONO}; font-size:clamp(26px,4.5vw,40px); color:#f4f6fa;
   color:#f4f6fa; font-variant-numeric:tabular-nums; line-height:1; }}
 .big.pink {{ color:#f472b6; }}
 .stat {{ display:flex; flex-direction:column; gap:6px; }}
+.stat-replay {{ align-items:flex-end; }}
+.churn-ins {{ color:#f472b6; }}
+.churn-dels {{ color:#22d3ee; }}
 .spacer {{ flex:1; }}
 .r-btn {{ font-family:{_MONO}; font-size:13px; cursor:pointer; color:#d3d9e3;
   background:#171b24; border:1px solid #2a3140; border-radius:8px;
@@ -129,6 +136,7 @@ h1 {{ font-family:{_MONO}; font-size:clamp(26px,4.5vw,40px); color:#f4f6fa;
 .au-bar {{ display:block; height:12px; border-radius:4px; width:0;
   transition:width 1.6s cubic-bezier(.22,.8,.3,1); }}
 .rp-bar {{ transition:none; }}
+{_BAR_STYLE}
 .au-n {{ font-family:{_MONO}; font-size:13px; font-variant-numeric:tabular-nums;
   width:5ch; text-align:right; color:#e7ebf2; }}
 .stamp {{ font-family:{_MONO}; font-size:11px; color:#6b7385;
@@ -354,11 +362,11 @@ def _repo_rows(order: list[str]) -> str:
     """
     rows = []
     for index, name in enumerate(order):
-        color = _CATEGORICAL[index] if index < len(_CATEGORICAL) else _TAIL
+        color_index = min(index, len(_CATEGORICAL))
         rows.append(
             f'<div class="au-row"><span class="au-name">{_esc(name)}</span>'
-            f'<span class="au-track"><span class="au-bar rp-bar" '
-            f'style="background:{color}"></span></span>'
+            f'<span class="au-track"><span '
+            f'class="au-bar rp-bar bar-color-{color_index}"></span></span>'
             f'<span class="au-n rp-n">0</span></div>',
         )
     return "".join(rows)
@@ -376,12 +384,12 @@ def _author_rows(ranked: list[tuple[str, int]], max_count: int) -> str:
     """
     rows = []
     for index, (name, count) in enumerate(ranked):
-        color = _CATEGORICAL[index] if index < len(_CATEGORICAL) else _TAIL
+        color_index = min(index, len(_CATEGORICAL))
         width = count / max_count * 100 if max_count else 0.0
         rows.append(
             f'<div class="au-row"><span class="au-name">{_esc(name)}</span>'
-            f'<span class="au-track"><span class="au-bar" data-w="{width:.1f}" '
-            f'style="background:{color}"></span></span>'
+            f'<span class="au-track"><span class="au-bar bar-color-{color_index}" '
+            f'data-w="{width:.1f}"></span></span>'
             f'<span class="au-n" data-counter-max="{count}">0</span></div>',
         )
     return "".join(rows)
@@ -542,7 +550,7 @@ def render(
         org_label: Human-readable owner label shown in the page eyebrow.
 
     Returns:
-        A complete ``<!doctype html>`` document as a string.
+        A complete ``<!DOCTYPE html>`` document as a string.
 
     Raises:
         ValueError: If ``commits`` is empty.
@@ -605,8 +613,9 @@ def render(
     <div class="stat"><span class="k">lines written</span>
       <span class="big pink r-lines">+0</span></div>
     <div class="spacer"></div>
-    <div class="stat" style="align-items:flex-end">
-      <button class="r-btn">▶ replay {span_years:.1f} years in 30s</button>
+    <div class="stat stat-replay">
+      <button class="r-btn" type="button">\
+▶ replay {span_years:.1f} years in 30s</button>
     </div>
   </div>
   <div class="panel-body">
@@ -633,8 +642,8 @@ lines changed; pink is mostly additions, cyan is mostly deletions">
     </div>
   </div>
   <div class="panel-foot">All {_fmt(total)} commits (merges excluded), replayed.
-  <span style="color:#f472b6">Pink</span> bars are mostly new code;
-  <span style="color:#22d3ee">cyan</span>
+  <span class="churn-ins">Pink</span> bars are mostly new code;
+  <span class="churn-dels">cyan</span>
   bars are mostly deletion; height is lines touched (√ scale). The log shows the
   biggest real commit subjects as the playhead passes them.
   Total churn: +{_fmt(total_ins)} / −{_fmt(total_dels)}.</div>
@@ -688,7 +697,7 @@ lines changed; pink is mostly additions, cyan is mostly deletions">
         max_repo=max_repo,
     )
 
-    return f"""<!doctype html>
+    return f"""<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="utf-8">

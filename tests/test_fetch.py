@@ -11,7 +11,7 @@ import pytest
 from assertpy import assert_that
 
 from git_replay import fetch
-from git_replay.fetch import _get_json, _run
+from git_replay.fetch import _PER_PAGE, _get_json, _run
 from git_replay.model import parse_log
 from git_replay.repo import Repo
 
@@ -119,7 +119,7 @@ def test_discover_repos_paginates(monkeypatch: pytest.MonkeyPatch) -> None:
             "private": False,
             "fork": False,
         }
-        for index in range(100)
+        for index in range(_PER_PAGE)
     ]
     tail_page = [
         {
@@ -138,7 +138,7 @@ def test_discover_repos_paginates(monkeypatch: pytest.MonkeyPatch) -> None:
 
     repos = fetch.discover_repos("o")
 
-    assert_that(repos).is_length(101)
+    assert_that(repos).is_length(_PER_PAGE + 1)
 
 
 def test_get_json_sets_bearer_token(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -319,6 +319,7 @@ def test_dump_external_log_writes_parseable_log(
 
     commits = parse_log(path=result, repo="raycast-extensions", aliases={})
     assert_that(commits).is_length(1)
+    assert_that(commits[0].t).is_equal_to(1_767_323_045)
     assert_that(commits[0].subject).is_equal_to("subject for aaa")
     assert_that(commits[0].ins).is_equal_to(12)
     assert_that(commits[0].dels).is_equal_to(3)

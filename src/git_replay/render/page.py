@@ -550,7 +550,7 @@ def render(
         org_label: Human-readable owner label shown in the page eyebrow.
 
     Returns:
-        A complete ``<!doctype html>`` document as a string.
+        A complete ``<!DOCTYPE html>`` document as a string.
 
     Raises:
         ValueError: If ``commits`` is empty.

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import date, timezone
+from datetime import UTC, date
 
 import pytest
 from assertpy import assert_that
@@ -100,7 +100,7 @@ def test_daily_counts_groups_by_local_day() -> None:
         _commit(t=3600),
         _commit(t=90000),
     ]
-    counts = daily_counts(commits=commits, tz=timezone.utc)
+    counts = daily_counts(commits=commits, tz=UTC)
     assert_that(counts[date(1970, 1, 1)]).is_equal_to(2)
     assert_that(counts[date(1970, 1, 2)]).is_equal_to(1)
 

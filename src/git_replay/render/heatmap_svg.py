@@ -147,8 +147,10 @@ def _render_year(
     """
     label_y = top + 3 * _STEP + _CELL
     parts = [
-        f'<text x="{_PAD_LEFT - _LABEL_GAP}" y="{label_y}" text-anchor="end" '
-        f'fill="{theme.muted}" font-family="{_FONT}" font-size="11">{year}</text>',
+        (
+            f'<text x="{_PAD_LEFT - _LABEL_GAP}" y="{label_y}" text-anchor="end" '
+            f'fill="{theme.muted}" font-family="{_FONT}" font-size="11">{year}</text>'
+        ),
     ]
     jan1 = date(year, 1, 1)
     day = jan1
@@ -286,18 +288,18 @@ def render(
     max_count = max(daily_counts.values())
     years = sorted({day.year for day in daily_counts})
 
-    blocks = []
-    max_week = 0
-    for offset, year in enumerate(years):
-        markup, block_week = _render_year(
+    year_blocks = [
+        _render_year(
             year=year,
             counts=daily_counts,
             max_count=max_count,
             top=_PAD_TOP + offset * _YEAR_HEIGHT,
             theme=theme,
         )
-        blocks.append(markup)
-        max_week = max(max_week, block_week)
+        for offset, year in enumerate(years)
+    ]
+    blocks = [markup for markup, _ in year_blocks]
+    max_week = max(week for _, week in year_blocks)
 
     legend_top = _PAD_TOP + len(years) * _YEAR_HEIGHT + _LEGEND_GAP
     blocks.append(_render_legend(max_count=max_count, top=legend_top, theme=theme))
@@ -306,9 +308,13 @@ def render(
     if data_as_of is not None:
         blocks.append(_stamp(data_as_of=data_as_of, top=legend_bottom, theme=theme))
 
-    grid_right = _PAD_LEFT + (max_week + 1) * _STEP
-    legend_right = _PAD_LEFT + 12 + _LEGEND_WIDTH + 6 + 96
-    width = max(grid_right, legend_right) + _PAD_RIGHT
+    width = (
+        max(
+            _PAD_LEFT + (max_week + 1) * _STEP,  # right edge of the day grid
+            _PAD_LEFT + 12 + _LEGEND_WIDTH + 6 + 96,  # right edge of the legend
+        )
+        + _PAD_RIGHT
+    )
     stamp_band = (_STAMP_GAP + _STAMP_HEIGHT) if data_as_of is not None else 0
     height = legend_bottom + stamp_band + _LEGEND_GAP + _PAD_TOP
 

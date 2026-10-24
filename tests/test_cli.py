@@ -10,6 +10,7 @@ import pytest
 from assertpy import assert_that
 
 from git_replay import cli
+from git_replay.cli import _fetch, _pinned_repo_names
 from git_replay.config import Config
 from git_replay.manifest import load_manifest, save_manifest
 from git_replay.render.theme import DARK, LIGHT
@@ -90,6 +91,7 @@ def test_fetch_command_dumps_non_excluded_repos(
     dumped: list[str] = []
 
     def fake_dump(repo: Repo, out_dir: Path) -> Path:
+        assert_that(out_dir).is_equal_to(tmp_path / "logs")
         dumped.append(repo.name)
         return Path(repo.name)
 
@@ -138,6 +140,7 @@ def test_fetch_dumps_every_repo_once_in_parallel_sorted(
 
     def fake_dump(repo: Repo, out_dir: Path) -> Path:
         nonlocal active, peak
+        assert_that(out_dir).is_equal_to(tmp_path)
         with lock:
             active += 1
             peak = max(peak, active)
@@ -150,7 +153,7 @@ def test_fetch_dumps_every_repo_once_in_parallel_sorted(
     monkeypatch.setattr(cli, "discover_repos", lambda owner: discovered)
     monkeypatch.setattr(cli, "dump_log", fake_dump)
 
-    written = cli._fetch(
+    written = _fetch(
         config=Config(owners=["TurboCoder13"]),
         out_dir=tmp_path,
     )
@@ -170,6 +173,8 @@ def test_fetch_runs_external_dumps_in_the_same_pool(
     external_calls: list[str] = []
 
     def fake_external(full_name: str, authors: list[str], out_dir: Path) -> Path:
+        assert_that(authors).is_equal_to(["ada"])
+        assert_that(out_dir).is_equal_to(tmp_path)
         external_calls.append(full_name)
         return tmp_path / "ext.log"
 
@@ -182,7 +187,7 @@ def test_fetch_runs_external_dumps_in_the_same_pool(
     monkeypatch.setattr(cli, "external_head", lambda full_name: "tok")
     monkeypatch.setattr(cli, "dump_external_log", fake_external)
 
-    written = cli._fetch(
+    written = _fetch(
         config=Config(
             owners=["TurboCoder13"],
             external=["other/repo"],
@@ -209,7 +214,7 @@ def test_fetch_drops_external_dumps_that_return_none(
         lambda full_name, authors, out_dir: None,
     )
 
-    written = cli._fetch(
+    written = _fetch(
         config=Config(external=["other/repo"], author_logins=["ada"]),
         out_dir=tmp_path,
     )
@@ -228,6 +233,7 @@ def test_fetch_reraises_after_draining_sibling_tasks(
 
     def fake_dump(repo: Repo, out_dir: Path) -> Path:
         time.sleep(0.02)
+        assert_that(out_dir).is_equal_to(tmp_path)
         if repo.name == "boom":
             raise RuntimeError("clone failed")
         with lock:
@@ -238,7 +244,7 @@ def test_fetch_reraises_after_draining_sibling_tasks(
     monkeypatch.setattr(cli, "dump_log", fake_dump)
 
     with pytest.raises(RuntimeError, match="clone failed"):
-        cli._fetch(config=Config(owners=["TurboCoder13"]), out_dir=tmp_path)
+        _fetch(config=Config(owners=["TurboCoder13"]), out_dir=tmp_path)
 
     assert_that(sorted(dumped)).is_equal_to(["alpha", "gamma"])
 
@@ -266,7 +272,7 @@ def test_fetch_skips_dump_when_manifest_matches_and_log_exists(
     )
     monkeypatch.setattr(cli, "dump_log", fake_dump)
 
-    written = cli._fetch(config=Config(owners=["TurboCoder13"]), out_dir=out_dir)
+    written = _fetch(config=Config(owners=["TurboCoder13"]), out_dir=out_dir)
 
     assert_that(dumped).is_empty()
     assert_that(written).contains(log_path)
@@ -294,7 +300,7 @@ def test_fetch_redumps_when_head_token_changed(
     )
     monkeypatch.setattr(cli, "dump_log", fake_dump)
 
-    cli._fetch(config=Config(owners=["TurboCoder13"]), out_dir=out_dir)
+    _fetch(config=Config(owners=["TurboCoder13"]), out_dir=out_dir)
 
     assert_that(dumped).is_equal_to(["alpha"])
 
@@ -320,7 +326,7 @@ def test_fetch_redumps_when_log_file_missing(
     )
     monkeypatch.setattr(cli, "dump_log", fake_dump)
 
-    cli._fetch(config=Config(owners=["TurboCoder13"]), out_dir=out_dir)
+    _fetch(config=Config(owners=["TurboCoder13"]), out_dir=out_dir)
 
     assert_that(dumped).is_equal_to(["alpha"])
 
@@ -345,7 +351,7 @@ def test_fetch_rewrites_manifest_each_run(
         lambda repo, out_dir: out_dir / f"{repo.owner}__{repo.name}.log",
     )
 
-    cli._fetch(config=Config(owners=["TurboCoder13"]), out_dir=out_dir)
+    _fetch(config=Config(owners=["TurboCoder13"]), out_dir=out_dir)
 
     assert_that(load_manifest(out_dir)).is_equal_to({"TurboCoder13/alpha": "fresh"})
 
@@ -382,7 +388,7 @@ def test_build_writes_page_and_four_svgs(
     assert_that(capsys.readouterr().out).contains("Wrote 9 file(s)")
 
     index = (out_dir / "index.html").read_text(encoding="utf-8")
-    assert_that(index).starts_with("<!doctype html>")
+    assert_that(index).starts_with("<!DOCTYPE html>")
     assert_that(index).contains("commits, replayed")
     for svg_name in _BUILD_OUTPUTS[1:]:
         svg = (out_dir / svg_name).read_text(encoding="utf-8")
@@ -448,13 +454,13 @@ def test_build_rejects_empty_logs_dir(tmp_path: Path) -> None:
 
 def test_pinned_repo_names_maps_external_slash_to_dash() -> None:
     """Configured ``owner/name`` externals map to ``owner-name`` short names."""
-    names = cli._pinned_repo_names(external=["acme/widget", "octo/cat"])
+    names = _pinned_repo_names(external=["acme/widget", "octo/cat"])
     assert_that(names).is_equal_to(("acme-widget", "octo-cat"))
 
 
 def test_pinned_repo_names_defaults_to_empty() -> None:
     """No external repositories yields no pinned short names."""
-    assert_that(cli._pinned_repo_names(external=[])).is_equal_to(())
+    assert_that(_pinned_repo_names(external=[])).is_equal_to(())
 
 
 def test_build_pins_configured_external_repo_row(tmp_path: Path) -> None:

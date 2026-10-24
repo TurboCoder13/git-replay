@@ -88,29 +88,47 @@ def render(
     height = _HEIGHT + (_STAMP_BAND if data_as_of is not None else 0)
 
     parts = [
-        f'<svg xmlns="http://www.w3.org/2000/svg" '
-        f'viewBox="0 0 {_WIDTH} {height}" width="{_WIDTH}" '
-        f'height="{height}" role="img" aria-label="{_esc(aria)}" '
-        f'font-family="{_FONT}">',
+        (
+            f'<svg xmlns="http://www.w3.org/2000/svg" '
+            f'viewBox="0 0 {_WIDTH} {height}" width="{_WIDTH}" '
+            f'height="{height}" role="img" aria-label="{_esc(aria)}" '
+            f'font-family="{_FONT}">'
+        ),
         f"<title>{_esc(aria)}</title>",
         f"<desc>{_esc(CAPTION)}</desc>",
-        f'<rect x="0.5" y="0.5" width="{_WIDTH - 1}" height="{height - 1}" '
-        f'rx="14" fill="{theme.surface}" stroke="{theme.border}"/>',
-        f'<text x="28" y="30" font-size="11" letter-spacing="0.18em" '
-        f'fill="{theme.label}">COMMIT AUTHORSHIP</text>',
-        f'<text x="28" y="70" font-size="32" style="{_TABULAR}">'
-        f'<tspan fill="{theme.accent}" font-weight="700">{pct}</tspan>'
-        f'<tspan fill="{theme.headline}"> agent-authored</tspan></text>',
-        f'<text x="28" y="100" font-size="12" fill="{theme.muted}">'
-        f"{_esc(CAPTION)}</text>",
-        f'<text x="672" y="52" text-anchor="end" font-size="22" '
-        f'fill="{theme.headline}" style="{_TABULAR}">{agent_str}</text>',
-        f'<text x="672" y="68" text-anchor="end" font-size="10" '
-        f'letter-spacing="0.14em" fill="{theme.label}">AGENT COMMITS</text>',
-        f'<text x="672" y="94" text-anchor="end" font-size="22" '
-        f'fill="{theme.value}" style="{_TABULAR}">{bot_str}</text>',
-        f'<text x="672" y="110" text-anchor="end" font-size="10" '
-        f'letter-spacing="0.14em" fill="{theme.label}">SERVICE-BOT COMMITS</text>',
+        (
+            f'<rect x="0.5" y="0.5" width="{_WIDTH - 1}" height="{height - 1}" '
+            f'rx="14" fill="{theme.surface}" stroke="{theme.border}"/>'
+        ),
+        (
+            f'<text x="28" y="30" font-size="11" letter-spacing="0.18em" '
+            f'fill="{theme.label}">COMMIT AUTHORSHIP</text>'
+        ),
+        (
+            f'<text x="28" y="70" font-size="32" style="{_TABULAR}">'
+            f'<tspan fill="{theme.accent}" font-weight="700">{pct}</tspan>'
+            f'<tspan fill="{theme.headline}"> agent-authored</tspan></text>'
+        ),
+        (
+            f'<text x="28" y="100" font-size="12" fill="{theme.muted}">'
+            f"{_esc(CAPTION)}</text>"
+        ),
+        (
+            f'<text x="672" y="52" text-anchor="end" font-size="22" '
+            f'fill="{theme.headline}" style="{_TABULAR}">{agent_str}</text>'
+        ),
+        (
+            f'<text x="672" y="68" text-anchor="end" font-size="10" '
+            f'letter-spacing="0.14em" fill="{theme.label}">AGENT COMMITS</text>'
+        ),
+        (
+            f'<text x="672" y="94" text-anchor="end" font-size="22" '
+            f'fill="{theme.value}" style="{_TABULAR}">{bot_str}</text>'
+        ),
+        (
+            f'<text x="672" y="110" text-anchor="end" font-size="10" '
+            f'letter-spacing="0.14em" fill="{theme.label}">SERVICE-BOT COMMITS</text>'
+        ),
     ]
     if data_as_of is not None:
         parts.append(

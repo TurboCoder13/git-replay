@@ -4,12 +4,15 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Any
+from types import SimpleNamespace
+from typing import Any, Self
 
 import pytest
 from assertpy import assert_that
 
 from git_replay import fetch
+from git_replay.fetch import _get_json, _run
+from git_replay.model import parse_log
 from git_replay.repo import Repo
 
 _FIXTURES = Path(__file__).parent / "fixtures"
@@ -116,7 +119,7 @@ def test_discover_repos_paginates(monkeypatch: pytest.MonkeyPatch) -> None:
             "private": False,
             "fork": False,
         }
-        for index in range(fetch._PER_PAGE)
+        for index in range(100)
     ]
     tail_page = [
         {
@@ -135,7 +138,7 @@ def test_discover_repos_paginates(monkeypatch: pytest.MonkeyPatch) -> None:
 
     repos = fetch.discover_repos("o")
 
-    assert_that(repos).is_length(fetch._PER_PAGE + 1)
+    assert_that(repos).is_length(101)
 
 
 def test_get_json_sets_bearer_token(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -144,9 +147,10 @@ def test_get_json_sets_bearer_token(monkeypatch: pytest.MonkeyPatch) -> None:
 
     class _Response:
         def read(self) -> bytes:
+            """Return the encoded REST response body."""
             return b"[]"
 
-        def __enter__(self) -> "_Response":
+        def __enter__(self) -> Self:
             return self
 
         def __exit__(self, *args: object) -> None:
@@ -159,7 +163,7 @@ def test_get_json_sets_bearer_token(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("GH_TOKEN", "s3cr3t")
     monkeypatch.setattr(fetch.urllib.request, "urlopen", fake_urlopen)
 
-    result = fetch._get_json("https://api.github.com/users/o/repos")
+    result = _get_json("https://api.github.com/users/o/repos")
 
     assert_that(result).is_equal_to([])
     assert_that(captured["request"].get_header("Authorization")).is_equal_to(
@@ -175,9 +179,10 @@ def test_get_json_without_token_omits_authorization(
 
     class _Response:
         def read(self) -> bytes:
+            """Return the encoded REST response body."""
             return b'[{"name": "x"}]'
 
-        def __enter__(self) -> "_Response":
+        def __enter__(self) -> Self:
             return self
 
         def __exit__(self, *args: object) -> None:
@@ -190,7 +195,7 @@ def test_get_json_without_token_omits_authorization(
     monkeypatch.delenv("GH_TOKEN", raising=False)
     monkeypatch.setattr(fetch.urllib.request, "urlopen", fake_urlopen)
 
-    result = fetch._get_json("https://api.github.com/users/o/repos")
+    result = _get_json("https://api.github.com/users/o/repos")
 
     assert_that(result).is_equal_to([{"name": "x"}])
     assert_that(captured["request"].get_header("Authorization")).is_none()
@@ -227,27 +232,28 @@ def test_dump_log_clones_and_writes(
     log_args = calls[1]
     assert_that(log_args).contains("--no-merges")
     assert_that(log_args).contains("--numstat")
-    assert_that(log_args).contains(f"--format={fetch._LOG_FORMAT}")
+    assert_that(log_args).contains("--format=@%at%x09%an%x09%s")
 
 
 def test_get_json_rejects_non_https() -> None:
     """A non-https URL is rejected before any request is made."""
     with pytest.raises(ValueError):
-        fetch._get_json("file:///etc/passwd")
+        _get_json("file:///etc/passwd")
 
 
 def test_run_executes_git(monkeypatch: pytest.MonkeyPatch) -> None:
     """_run captures stdout from the underlying subprocess call."""
 
-    class _Completed:
-        stdout = "ok\n"
-
-    def fake_subprocess_run(args: list[str], **kwargs: object) -> _Completed:
-        return _Completed()
+    def fake_subprocess_run(args: list[str], **kwargs: object) -> SimpleNamespace:
+        assert_that(args).is_equal_to(["git", "--version"])
+        assert_that(kwargs).is_equal_to(
+            {"capture_output": True, "text": True, "check": True}
+        )
+        return SimpleNamespace(stdout="ok\n")
 
     monkeypatch.setattr(fetch.subprocess, "run", fake_subprocess_run)
 
-    assert_that(fetch._run(["git", "--version"])).is_equal_to("ok\n")
+    assert_that(_run(["git", "--version"])).is_equal_to("ok\n")
 
 
 def _external_commit_item(
@@ -310,8 +316,6 @@ def test_dump_external_log_writes_parseable_log(
     if result is None:  # pragma: no cover - fails the test above via assertpy
         raise AssertionError("expected a written log file")
     assert_that(result.name).is_equal_to("raycast__raycast-extensions.log")
-
-    from git_replay.model import parse_log
 
     commits = parse_log(path=result, repo="raycast-extensions", aliases={})
     assert_that(commits).is_length(1)

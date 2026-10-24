@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import timezone
+from datetime import UTC
 from pathlib import Path
 
 import pytest
@@ -91,15 +91,62 @@ _SAMPLE: list[Commit] = [
 
 def test_render_matches_snapshot() -> None:
     """The rendered page is byte-for-byte stable against the golden snapshot."""
-    html = page.render(commits=_SAMPLE, tz=timezone.utc, org_label="demo-org")
+    html = page.render(commits=_SAMPLE, tz=UTC, org_label="demo-org")
     expected = _SNAPSHOT.read_text(encoding="utf-8")
     assert_that(html).is_equal_to(expected)
 
 
+def test_render_uses_stylesheet_classes_instead_of_style_attributes() -> None:
+    """Static page styling lives in the embedded stylesheet, not attributes."""
+    html = page.render(commits=_SAMPLE, tz=UTC)
+    assert_that(html).does_not_contain(' style="')
+    assert_that(html).contains(".bar-color-0 { background:#db2777; }")
+    assert_that(html).contains('class="au-bar rp-bar bar-color-0"')
+    assert_that(html).contains('class="au-bar bar-color-0"')
+
+
+def test_render_declares_doctype_and_non_submitting_replay_button() -> None:
+    """The document and replay button have explicit HTML defaults."""
+    html = page.render(commits=_SAMPLE, tz=UTC)
+    assert_that(html).starts_with("<!DOCTYPE html>")
+    assert_that(html).contains('<button class="r-btn" type="button">')
+
+
+def test_render_preserves_palette_order_and_overflow_color_in_both_panels() -> None:
+    """Repo and author rows use all nine colors, then the same neutral tail."""
+    commits = [
+        Commit(
+            t=index, author=f"author-{index:02}", subject="s", repo=f"repo-{index:02}"
+        )
+        for index in range(11)
+    ]
+    html = page.render(commits=commits, tz=UTC)
+    colors = (
+        "#db2777",
+        "#0891b2",
+        "#d97706",
+        "#7c3aed",
+        "#65a30d",
+        "#2563eb",
+        "#ea580c",
+        "#059669",
+        "#dc2626",
+    )
+    for index, color in enumerate(colors):
+        assert_that(html).contains(f".bar-color-{index} {{ background:{color}; }}")
+        assert_that(html.count(f'class="au-bar rp-bar bar-color-{index}"')).is_equal_to(
+            1
+        )
+        assert_that(html.count(f'class="au-bar bar-color-{index}"')).is_equal_to(1)
+    assert_that(html).contains(".bar-color-9 { background:#475569; }")
+    assert_that(html.count('class="au-bar rp-bar bar-color-9"')).is_equal_to(2)
+    assert_that(html.count('class="au-bar bar-color-9"')).is_equal_to(2)
+
+
 def test_render_is_self_contained() -> None:
     """The page inlines all CSS/JS and references no external resources."""
-    html = page.render(commits=_SAMPLE, tz=timezone.utc)
-    assert_that(html).starts_with("<!doctype html>")
+    html = page.render(commits=_SAMPLE, tz=UTC)
+    assert_that(html).starts_with("<!DOCTYPE html>")
     assert_that(html).contains("<style>").contains("<script>")
     # No external resource loads: no linked stylesheets, no sourced scripts or
     # images. (The SVG xmlns namespace URL is a declaration, not a fetch.)
@@ -111,7 +158,7 @@ def test_render_is_self_contained() -> None:
 
 def test_render_carries_interactive_hooks() -> None:
     """The replay wiring (playhead, counters, observer, reduced-motion) is present."""
-    html = page.render(commits=_SAMPLE, tz=timezone.utc)
+    html = page.render(commits=_SAMPLE, tz=UTC)
     assert_that(html).contains("IntersectionObserver")
     assert_that(html).contains("prefers-reduced-motion")
     assert_that(html).contains("requestAnimationFrame")
@@ -122,7 +169,7 @@ def test_render_carries_interactive_hooks() -> None:
 
 def test_render_uses_settled_agent_authored_framing() -> None:
     """The author panel keeps the settled agent-authored wording."""
-    html = page.render(commits=_SAMPLE, tz=timezone.utc)
+    html = page.render(commits=_SAMPLE, tz=UTC)
     assert_that(html).contains("agent-authored")
     assert_that(html).contains("authored by AI coding")
     assert_that(html).does_not_contain("human-authored")
@@ -130,7 +177,7 @@ def test_render_uses_settled_agent_authored_framing() -> None:
 
 def test_render_neutralizes_closing_tags_in_baked_json() -> None:
     """A ``</`` sequence in baked data cannot terminate the script element."""
-    html = page.render(commits=_SAMPLE, tz=timezone.utc)
+    html = page.render(commits=_SAMPLE, tz=UTC)
     # The "</b>" subject reaches the JS ticker; "</" is rewritten to "<\/" so the
     # payload cannot close the enclosing <script> block early.
     assert_that(html).contains("<\\/b>")
@@ -139,14 +186,14 @@ def test_render_neutralizes_closing_tags_in_baked_json() -> None:
 
 def test_render_embeds_the_heatmap_widget() -> None:
     """The heatmap panel embeds the reusable heatmap SVG renderer output."""
-    html = page.render(commits=_SAMPLE, tz=timezone.utc)
+    html = page.render(commits=_SAMPLE, tz=UTC)
     assert_that(html).contains('role="img"')
     assert_that(html).contains("Daily commit heatmap by year")
 
 
 def test_render_stamps_the_last_commit_date() -> None:
     """The page footer carries a muted stamp of the max-commit (last) date."""
-    html = page.render(commits=_SAMPLE, tz=timezone.utc)
+    html = page.render(commits=_SAMPLE, tz=UTC)
     # Max commit t (1_700_620_000) resolves to Nov 22, 2023 in UTC.
     assert_that(html).contains('<footer class="stamp">data as of Nov 22, 2023</footer>')
 
@@ -164,4 +211,4 @@ def test_render_modules_do_not_use_wall_clock() -> None:
 def test_render_rejects_empty_commits() -> None:
     """Rendering an empty history is a programming error."""
     with pytest.raises(ValueError):
-        page.render(commits=[], tz=timezone.utc)
+        page.render(commits=[], tz=UTC)

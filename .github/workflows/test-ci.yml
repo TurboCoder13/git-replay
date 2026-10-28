@@ -23,21 +23,22 @@ jobs:
   #                                  test / Aggregate Python Results
   test:
     # yamllint disable-line rule:line-length
-    uses: lgtm-hq/lgtm-ci/.github/workflows/reusable-test-python.yml@9ea778eb4e6b876d60b7b3d7d0d0aee5182717bb # v0.78.0
+    uses: lgtm-hq/lgtm-ci/.github/workflows/reusable-test-python.yml@2097a900753e3e5ad0e336483501b278e99855ae # v0.78.1
     with:
       publish-test-summary: false
       python-versions: '3.11,3.12,3.13'
       test-path: tests
       coverage: false
       extra-args: '--override-ini=addopts=--strict-markers --strict-config'
-      draft-pr-skip: true
+      # Validate the gate prerequisite on a draft too; never count skipped tests.
+      draft-pr-skip: false
       job-name: '🧪 Python Compatibility'
       # Distinct artifact prefixes (lgtm-ci v0.76 #1108): both calls run 3.13,
       # so the shared default `python-results-3.13` would let one call's
       # results overwrite the other's.
       artifact-prefix: compat
       runner-image: ubuntu-24.04
-      tooling-ref: '9ea778eb4e6b876d60b7b3d7d0d0aee5182717bb' # v0.78.0
+      tooling-ref: '2097a900753e3e5ad0e336483501b278e99855ae' # v0.78.1
       egress-policy: block
       egress-preset: quality
     permissions:
@@ -53,7 +54,7 @@ jobs:
   # Org ruleset (checks-git-replay): test-coverage / Python Coverage
   test-coverage:
     # yamllint disable-line rule:line-length
-    uses: lgtm-hq/lgtm-ci/.github/workflows/reusable-test-python.yml@9ea778eb4e6b876d60b7b3d7d0d0aee5182717bb # v0.78.0
+    uses: lgtm-hq/lgtm-ci/.github/workflows/reusable-test-python.yml@2097a900753e3e5ad0e336483501b278e99855ae # v0.78.1
     with:
       publish-test-summary: true
       python-version: '3.13'
@@ -63,11 +64,12 @@ jobs:
       coverage-threshold: 80
       upload-coverage: true
       extra-args: '--override-ini=addopts=--strict-markers --strict-config'
-      draft-pr-skip: true
+      # Validate the gate prerequisite on a draft too; never count skipped tests.
+      draft-pr-skip: false
       job-name: Python Coverage
       artifact-prefix: coverage
       runner-image: ubuntu-24.04
-      tooling-ref: '9ea778eb4e6b876d60b7b3d7d0d0aee5182717bb' # v0.78.0
+      tooling-ref: '2097a900753e3e5ad0e336483501b278e99855ae' # v0.78.1
       egress-policy: block
       egress-preset: quality
     permissions:

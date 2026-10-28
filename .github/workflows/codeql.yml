@@ -38,7 +38,7 @@ jobs:
       config-file: .github/codeql/codeql-config.yml
       category: '/language:all'
       tooling-ref: '2097a900753e3e5ad0e336483501b278e99855ae' # v0.78.1
-      egress-policy: block
+      egress-policy: audit # TEMP: lgtm-hq/lgtm-ci#1207
       # github-tooling preset includes release-assets.githubusercontent.com,
       # the CodeQL bundle CDN, so no extra allowed-endpoints are required.
       egress-preset: github-tooling

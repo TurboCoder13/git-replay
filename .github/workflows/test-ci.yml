@@ -39,7 +39,7 @@ jobs:
       artifact-prefix: compat
       runner-image: ubuntu-24.04
       tooling-ref: '2097a900753e3e5ad0e336483501b278e99855ae' # v0.78.1
-      egress-policy: block
+      egress-policy: audit # TEMP: lgtm-hq/lgtm-ci#1207
       egress-preset: quality
     permissions:
       # write: merge matrix artifacts and update workflow summaries
@@ -70,7 +70,7 @@ jobs:
       artifact-prefix: coverage
       runner-image: ubuntu-24.04
       tooling-ref: '2097a900753e3e5ad0e336483501b278e99855ae' # v0.78.1
-      egress-policy: block
+      egress-policy: audit # TEMP: lgtm-hq/lgtm-ci#1207
       egress-preset: quality
     permissions:
       # write: merge coverage artifacts and update workflow summaries

@@ -1,0 +1,31 @@
+---
+name: CI - All Checks Gate
+
+# Keep the gate in its own workflow: the reusable excludes this caller's
+# runs to avoid waiting on itself, and gates every other run on the head SHA
+# (including both push and pull_request runs), check and commit status.
+'on':
+  pull_request:
+    # Union of all head-SHA PR events, including title edits.
+    types: [opened, edited, synchronize, reopened, ready_for_review]
+  merge_group:
+  push:
+    branches: [main]
+
+permissions: {}
+
+concurrency:
+  group: all-checks-gate-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+jobs:
+  gate:
+    # yamllint disable-line rule:line-length
+    uses: lgtm-hq/lgtm-ci/.github/workflows/reusable-all-checks-gate.yml@2097a900753e3e5ad0e336483501b278e99855ae # v0.78.1
+    with:
+      egress-policy: block
+    permissions:
+      actions: read
+      checks: read
+      contents: read
+      statuses: read

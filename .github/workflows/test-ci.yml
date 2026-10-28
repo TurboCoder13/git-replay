@@ -30,7 +30,8 @@ jobs:
       test-path: tests
       coverage: false
       extra-args: '--override-ini=addopts=--strict-markers --strict-config'
-      draft-pr-skip: true
+      # Validate the gate prerequisite on a draft too; never count skipped tests.
+      draft-pr-skip: false
       job-name: '🧪 Python Compatibility'
       # Distinct artifact prefixes (lgtm-ci v0.76 #1108): both calls run 3.13,
       # so the shared default `python-results-3.13` would let one call's
@@ -63,7 +64,8 @@ jobs:
       coverage-threshold: 80
       upload-coverage: true
       extra-args: '--override-ini=addopts=--strict-markers --strict-config'
-      draft-pr-skip: true
+      # Validate the gate prerequisite on a draft too; never count skipped tests.
+      draft-pr-skip: false
       job-name: Python Coverage
       artifact-prefix: coverage
       runner-image: ubuntu-24.04

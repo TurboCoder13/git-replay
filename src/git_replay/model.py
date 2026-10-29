@@ -53,8 +53,7 @@ def normalize_author(
         The canonical author name, or the cleaned raw name if no alias matches.
     """
     cleaned = author.strip()
-    if cleaned.endswith(_NL_SUFFIX):
-        cleaned = cleaned[: -len(_NL_SUFFIX)]
+    cleaned = cleaned.removesuffix(_NL_SUFFIX)
     return aliases.get(cleaned, cleaned)
 
 

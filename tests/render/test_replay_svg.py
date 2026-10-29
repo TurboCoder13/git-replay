@@ -52,8 +52,8 @@ def _fixture_buckets() -> list[Bucket]:
     return buckets
 
 
-@pytest.fixture
-def fixtures_dir() -> Path:
+@pytest.fixture(name="fixtures_dir")
+def _fixtures_dir() -> Path:
     """Return the directory holding snapshot fixtures.
 
     Returns:
@@ -62,8 +62,8 @@ def fixtures_dir() -> Path:
     return Path(__file__).parents[1] / "fixtures"
 
 
-@pytest.fixture
-def replay_svg() -> str:
+@pytest.fixture(name="replay_svg")
+def _replay_svg() -> str:
     """Render the widget for the fixture dataset.
 
     Returns:

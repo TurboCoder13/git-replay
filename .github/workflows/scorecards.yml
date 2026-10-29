@@ -22,7 +22,7 @@ jobs:
       # Replace-mode allowlist (Scorecard, OSV, GitHub and sigstore hosts). The
       # reusable composes it in its separate egress-preset job, which keeps the
       # scorecard job publishable (lgtm-hq/lgtm-ci#1173).
-      egress-policy: block
+      egress-policy: audit # TEMP: lgtm-hq/lgtm-ci#1207
       allowed-endpoints: >
         github.com:443
         api.github.com:443

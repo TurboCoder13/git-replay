@@ -19,7 +19,7 @@ jobs:
     with:
       fail-on-severity: high
       tooling-ref: '2097a900753e3e5ad0e336483501b278e99855ae' # v0.78.1
-      egress-policy: block
+      egress-policy: audit # TEMP: lgtm-hq/lgtm-ci#1207
       # Full allowlist (scorecard preset + project extras): harden-runner
       # enforces the caller's allowed-endpoints literally (its pre hook cannot
       # see resolved preset output), so partial append lists would block

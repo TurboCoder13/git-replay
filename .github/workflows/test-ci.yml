@@ -23,7 +23,7 @@ jobs:
   #                                  test / Aggregate Python Results
   test:
     # yamllint disable-line rule:line-length
-    uses: lgtm-hq/lgtm-ci/.github/workflows/reusable-test-python.yml@8f0fd9339df5d30a529aa572ceb51345b8be33a0 # v0.79.2
+    uses: lgtm-hq/lgtm-ci/.github/workflows/reusable-test-python.yml@c40cd60334b5b5f2952e1af99e2e083be50c1620 # v0.80.0
     with:
       publish-test-summary: false
       python-versions: '3.11,3.12,3.13'
@@ -38,7 +38,7 @@ jobs:
       # results overwrite the other's.
       artifact-prefix: compat
       runner-image: ubuntu-24.04
-      tooling-ref: '8f0fd9339df5d30a529aa572ceb51345b8be33a0' # v0.79.2
+      tooling-ref: 'c40cd60334b5b5f2952e1af99e2e083be50c1620' # v0.80.0
       egress-policy: audit # TEMP: lgtm-hq/lgtm-ci#1207
       egress-preset: quality
     permissions:
@@ -54,7 +54,7 @@ jobs:
   # Org ruleset (checks-git-replay): test-coverage / Python Coverage
   test-coverage:
     # yamllint disable-line rule:line-length
-    uses: lgtm-hq/lgtm-ci/.github/workflows/reusable-test-python.yml@8f0fd9339df5d30a529aa572ceb51345b8be33a0 # v0.79.2
+    uses: lgtm-hq/lgtm-ci/.github/workflows/reusable-test-python.yml@c40cd60334b5b5f2952e1af99e2e083be50c1620 # v0.80.0
     with:
       publish-test-summary: true
       python-version: '3.13'
@@ -69,7 +69,7 @@ jobs:
       job-name: Python Coverage
       artifact-prefix: coverage
       runner-image: ubuntu-24.04
-      tooling-ref: '8f0fd9339df5d30a529aa572ceb51345b8be33a0' # v0.79.2
+      tooling-ref: 'c40cd60334b5b5f2952e1af99e2e083be50c1620' # v0.80.0
       egress-policy: audit # TEMP: lgtm-hq/lgtm-ci#1207
       egress-preset: quality
     permissions:

@@ -37,7 +37,7 @@ jobs:
       # so the shared default `python-results-3.13` would let one call's
       # results overwrite the other's.
       artifact-prefix: compat
-      runner-image: ubuntu-24.04
+      runner-image: ubuntu-26.04
       tooling-ref: '8f0fd9339df5d30a529aa572ceb51345b8be33a0' # v0.79.2
       egress-policy: audit # TEMP: lgtm-hq/lgtm-ci#1207
       egress-preset: quality
@@ -68,7 +68,7 @@ jobs:
       draft-pr-skip: false
       job-name: Python Coverage
       artifact-prefix: coverage
-      runner-image: ubuntu-24.04
+      runner-image: ubuntu-26.04
       tooling-ref: '8f0fd9339df5d30a529aa572ceb51345b8be33a0' # v0.79.2
       egress-policy: audit # TEMP: lgtm-hq/lgtm-ci#1207
       egress-preset: quality

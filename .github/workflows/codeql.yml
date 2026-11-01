@@ -29,7 +29,7 @@ concurrency:
 jobs:
   codeql:
     # yamllint disable-line rule:line-length
-    uses: lgtm-hq/lgtm-ci/.github/workflows/reusable-codeql.yml@cda8cb5ae9dc69b82f396ac468c7a091a65f8568 # v0.82.4
+    uses: lgtm-hq/lgtm-ci/.github/workflows/reusable-codeql.yml@63c46e9549168ad7fa660c0b0bc7009b501cadea # v0.83.0
     with:
       # Org ruleset (checks-git-replay): codeql / 🔬 CodeQL Analysis
       job-name: '🔬 CodeQL Analysis'
@@ -37,7 +37,7 @@ jobs:
       build-mode: none
       config-file: .github/codeql/codeql-config.yml
       category: '/language:all'
-      tooling-ref: 'cda8cb5ae9dc69b82f396ac468c7a091a65f8568' # v0.82.4
+      tooling-ref: '63c46e9549168ad7fa660c0b0bc7009b501cadea' # v0.83.0
       egress-policy: audit # TEMP: lgtm-hq/lgtm-ci#1207
       # github-tooling preset includes release-assets.githubusercontent.com,
       # the CodeQL bundle CDN, so no extra allowed-endpoints are required.

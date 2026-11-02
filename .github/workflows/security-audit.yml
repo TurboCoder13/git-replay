@@ -21,9 +21,9 @@ concurrency:
 jobs:
   security-audit:
     # yamllint disable-line rule:line-length
-    uses: lgtm-hq/lgtm-ci/.github/workflows/reusable-security-audit.yml@48f0219de2d87df9b9884bf8f6e4f439ab4bce1c # v0.83.4
+    uses: lgtm-hq/lgtm-ci/.github/workflows/reusable-security-audit.yml@07096402542cc6bd8da4a04aa969460207403346 # v0.83.5
     with:
-      tooling-ref: '48f0219de2d87df9b9884bf8f6e4f439ab4bce1c' # v0.83.4
+      tooling-ref: '07096402542cc6bd8da4a04aa969460207403346' # v0.83.5
       runner-image: ubuntu-26.04
       upload-comment-artifact: ${{ github.event_name == 'pull_request' }}
       egress-policy: audit # TEMP: lgtm-hq/lgtm-ci#1207
@@ -41,9 +41,9 @@ jobs:
       github.event_name == 'pull_request' &&
       github.event.pull_request.head.repo.full_name == github.repository
     # yamllint disable-line rule:line-length
-    uses: lgtm-hq/lgtm-ci/.github/workflows/reusable-publish-security-audit-comment.yml@48f0219de2d87df9b9884bf8f6e4f439ab4bce1c # v0.83.4
+    uses: lgtm-hq/lgtm-ci/.github/workflows/reusable-publish-security-audit-comment.yml@07096402542cc6bd8da4a04aa969460207403346 # v0.83.5
     with:
-      tooling-ref: '48f0219de2d87df9b9884bf8f6e4f439ab4bce1c' # v0.83.4
+      tooling-ref: '07096402542cc6bd8da4a04aa969460207403346' # v0.83.5
       egress-policy: audit # TEMP: lgtm-hq/lgtm-ci#1207
       egress-preset: github-tooling
     permissions:

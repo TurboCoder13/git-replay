@@ -15,10 +15,10 @@ concurrency:
 jobs:
   dependency-review:
     # yamllint disable-line rule:line-length
-    uses: lgtm-hq/lgtm-ci/.github/workflows/reusable-dependency-review.yml@07096402542cc6bd8da4a04aa969460207403346 # v0.83.5
+    uses: lgtm-hq/lgtm-ci/.github/workflows/reusable-dependency-review.yml@34264da09655a7763cd79548132bbd2548b14aac # v0.83.8
     with:
       fail-on-severity: high
-      tooling-ref: '07096402542cc6bd8da4a04aa969460207403346' # v0.83.5
+      tooling-ref: '34264da09655a7763cd79548132bbd2548b14aac' # v0.83.8
       egress-policy: audit # TEMP: lgtm-hq/lgtm-ci#1207
       # Full allowlist (scorecard preset + project extras): harden-runner
       # enforces the caller's allowed-endpoints literally (its pre hook cannot

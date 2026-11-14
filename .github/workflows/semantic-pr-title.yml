@@ -17,9 +17,9 @@ concurrency:
 jobs:
   semantic-title:
     # yamllint disable-line rule:line-length
-    uses: lgtm-hq/lgtm-ci/.github/workflows/reusable-semantic-pr-title.yml@aaa960d8bfa543e532830c53e5446372c8e80c7e # v0.84.1
+    uses: lgtm-hq/lgtm-ci/.github/workflows/reusable-semantic-pr-title.yml@3aea2374000ace164c56ebbcb954cae004f98055 # v0.98.4
     with:
-      tooling-ref: 'aaa960d8bfa543e532830c53e5446372c8e80c7e' # v0.84.1
+      tooling-ref: '3aea2374000ace164c56ebbcb954cae004f98055' # v0.98.4
       # Org ruleset (checks-git-replay): semantic-title / 📝 Validate PR Title
       job-name: '📝 Validate PR Title'
       egress-policy: audit # TEMP: lgtm-hq/lgtm-ci#1207
